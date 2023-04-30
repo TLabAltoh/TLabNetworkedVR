@@ -3,6 +3,7 @@ Assets that support object manipulation for VR in Unity
 
 # Screenshot
 Image is an example of a project using this asset  
+![TLabGrabbable Capture Trim](https://user-images.githubusercontent.com/121733943/235363804-01b50f49-674e-40d4-a11e-39ed3ced5600.gif)
 
 # Getting Started
 ## Prerequisites
