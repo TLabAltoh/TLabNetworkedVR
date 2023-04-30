@@ -20,4 +20,4 @@ If you are adding to an existing git project, use the following command instead
 git submodule add https://github.com/TLabAltoh/TLabVRGrabber.git
 ```
 ## Link
-- [Sample project using this asset]()
+- [Sample project using this asset](https://github.com/TLabAltoh/VR_Kensyu)
