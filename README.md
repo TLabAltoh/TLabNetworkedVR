@@ -9,6 +9,7 @@ Image is an example of a project using this asset
 ## Prerequisites
 - Unity 2021.3.23f1  
 - Oculus Integration (Install from asset store)  
+- node (v16.15.0)
 ## Installing
 Clone the repository to any directory under Assets in the Unity project that will use the assets with the following command  
 ```
@@ -18,4 +19,5 @@ If you are adding to an existing git project, use the following command instead
 ```
 git submodule add https://github.com/TLabAltoh/TLabVRGrabber.git
 ```
-## 
+## Link
+- [Sample project using this asset]()
