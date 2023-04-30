@@ -9,7 +9,7 @@ Image is an example of a project using this asset
 - Unity 2021.3.23f1  
 - Oculus Integration (Install from asset store)  
 ## Installing
-1. Clone the repository to any directory under Assets in the Unity project that will use the assets with the following command  
+Clone the repository to any directory under Assets in the Unity project that will use the assets with the following command  
 ```
 git clone https://github.com/TLabAltoh/TLabVRGrabber.git
 ```
