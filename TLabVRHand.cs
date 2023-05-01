@@ -12,6 +12,7 @@ public class TLabVRHand : MonoBehaviour
     private Transform m_anchor;
     private OVRCameraRig m_cameraRig;
     private TLabVRGrabbable m_grabbable;
+    private float m_laserPointerMaxLength;
     private bool m_handInitialized = false;
 
     //
@@ -41,6 +42,7 @@ public class TLabVRHand : MonoBehaviour
     {
         m_handInitialized = true;
         m_cameraRig = FindObjectOfType<OVRCameraRig>();
+        m_laserPointerMaxLength = m_laserPointer.maxLength;
 
         if(m_controller == OVRInput.Controller.RTouch)
         {
@@ -68,6 +70,8 @@ public class TLabVRHand : MonoBehaviour
 
         if (Physics.Raycast(ray, out m_raycastHit, m_maxDistance, m_layerMask))
         {
+            m_laserPointer.maxLength = m_raycastHit.distance;
+
             if (m_grabbable)
             {
                 bool grip = OVRInput.Get(m_gripAxis, m_controller) > 0.0f;
@@ -82,8 +86,6 @@ public class TLabVRHand : MonoBehaviour
             {
                 GameObject target = m_raycastHit.collider.gameObject;
                 m_raycastResult = target;
-
-                m_laserPointer.maxLength = m_raycastHit.distance;
 
                 //
                 // Outline
@@ -119,7 +121,7 @@ public class TLabVRHand : MonoBehaviour
         }
         else
         {
-            m_laserPointer.maxLength = m_maxDistance;
+            m_laserPointer.maxLength = m_laserPointerMaxLength;
 
             if (m_grabbable)
             {
