@@ -4,7 +4,8 @@ public class TLabVRHand : MonoBehaviour
 {
     [SerializeField] private OVRInput.Controller m_controller;
     [SerializeField] private LaserPointer m_laserPointer;
-    [SerializeField] private OVRInput.Axis1D m_grip;
+    [SerializeField] private OVRInput.Axis1D m_gripAxis;
+    [SerializeField] private OVRInput.Button m_gripButton;
     [SerializeField] private float m_maxDistance = 10.0f;
     [SerializeField] private LayerMask m_layerMask;
 
@@ -63,25 +64,26 @@ public class TLabVRHand : MonoBehaviour
             return;
         }
 
-        if (m_grabbable)
+        Ray ray = new Ray(m_anchor.position, m_anchor.forward);
+
+        if (Physics.Raycast(ray, out m_raycastHit, m_maxDistance, m_layerMask))
         {
-            bool grip = OVRInput.Get(m_grip, m_controller) > 0.5f;
-            if (grip == false)
+            if (m_grabbable)
             {
-                m_grabbable.RemoveParent(this.gameObject);
+                bool grip = OVRInput.Get(m_gripAxis, m_controller) > 0.0f;
+                if (grip == false)
+                {
+                    m_grabbable.RemoveParent(this.gameObject);
 
-                m_grabbable = null;
+                    m_grabbable = null;
+                }
             }
-        }
-        else
-        {
-            Ray ray = new Ray(m_anchor.position, m_anchor.forward);
-
-            if (Physics.Raycast(ray, out m_raycastHit, m_maxDistance, m_layerMask))
+            else
             {
                 GameObject target = m_raycastHit.collider.gameObject;
-
                 m_raycastResult = target;
+
+                m_laserPointer.maxLength = m_raycastHit.distance;
 
                 //
                 // Outline
@@ -98,8 +100,8 @@ public class TLabVRHand : MonoBehaviour
                 // Grip
                 //
 
-                bool grip = OVRInput.Get(m_grip, m_controller) > 0.5f;
-                if (grip)
+                bool grip = OVRInput.GetDown(m_gripButton, m_controller);
+                if (grip == true)
                 {
                     TLabVRGrabbable grabbable = target.GetComponent<TLabVRGrabbable>();
 
@@ -114,10 +116,22 @@ public class TLabVRHand : MonoBehaviour
                     }
                 }
             }
-            else
+        }
+        else
+        {
+            m_laserPointer.maxLength = m_maxDistance;
+
+            if (m_grabbable)
             {
-                m_raycastResult = null;
+                bool grip = OVRInput.Get(m_gripAxis, m_controller) > 0.0f;
+                if (grip == false)
+                {
+                    m_grabbable.RemoveParent(this.gameObject);
+                    m_grabbable = null;
+                }
             }
+
+            m_raycastResult = null;
         }
     }
 }
