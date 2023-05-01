@@ -20,4 +20,5 @@ If you are adding to an existing git project, use the following command instead
 git submodule add https://github.com/TLabAltoh/TLabVRGrabber.git
 ```
 ## Link
-- [Sample project using this asset](https://github.com/TLabAltoh/VR_Kensyu)
+- [Sample project using this asset](https://github.com/TLabAltoh/VR_Kensyu)  
+- [See below for the multiplayer server code](https://github.com/TLabAltoh/VR_Kensyu/tree/master/Server/SyncServer)
