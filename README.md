@@ -10,6 +10,7 @@ Assets that support object manipulation for VR in Unity
 - Unity 2021.3.23f1  
 - Oculus Integration (Install from asset store)  
 - node (v16.15.0)
+- [NativeWebsocket](https://github.com/endel/NativeWebSocket)
 ## Installing
 Clone the repository to any directory under Assets in the Unity project that will use the assets with the following command  
 ```
