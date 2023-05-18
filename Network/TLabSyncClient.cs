@@ -140,6 +140,7 @@ public class TLabSyncClient : MonoBehaviour
 
     [Tooltip("Hide your avatar from yourself (hands only)")]
     [Header("Own Avator")]
+    [SerializeField] private GameObject m_cameraRig;
     [SerializeField] private GameObject m_rightHand;
     [SerializeField] private GameObject m_leftHand;
 

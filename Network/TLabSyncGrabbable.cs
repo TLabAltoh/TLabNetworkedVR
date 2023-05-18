@@ -95,9 +95,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
-
-        if(!m_grabbed)
-            SetGravity(active);
+        SetGravity((!m_grabbed && active) ? true : false);
     }
 
 
