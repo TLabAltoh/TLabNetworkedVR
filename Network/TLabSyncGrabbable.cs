@@ -4,14 +4,21 @@ using UnityEngine;
 public class TLabSyncGrabbable : TLabVRGrabbable
 {
     [Header("Sync Setting")]
+
+    [Tooltip("Be sure to enable this field for objects you want to synchronize")]
     [SerializeField] public bool m_enableSync = false;
+
+    [Tooltip("While this item is enabled, objects will automatically keep their transforms in sync regardless of player interaction.")]
     [SerializeField] public bool m_autoSync = false;
+
+    [Tooltip("Objects with this item disabled cannot be grabbed by any player")]
     [SerializeField] public bool m_locked = false;
 
-    [Header("World Initalize")]
     private bool m_rbAllocated = true;
+    [System.NonSerialized] public bool m_grabbed = false;
 
     // https://www.fenet.jp/dotnet/column/language/4836/
+    // A fast approach to string processing
 
     private StringBuilder builder = new StringBuilder();
 
@@ -19,18 +26,19 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         get
         {
-            if(m_rb == null)
-            {
-                return false;
-            }
-            else
-            {
-                return m_rb.useGravity;
-            }
+            return (m_rb == null) ? false : m_rb.useGravity;
         }
     }
 
-    public bool UseGravity
+    public bool IsEnableGravity
+    {
+        get
+        {
+            return (m_rb == null) ? false : m_rb.useGravity;
+        }
+    }
+
+    public bool IsUseGravity
     {
         get
         {
@@ -38,7 +46,15 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    public void SyncRemote(WebObjectInfo transform)
+
+
+
+
+    /// <summary>
+    /// Synchronize object transforms updated externally
+    /// </summary>
+    /// <param name="transform"></param>
+    public void SyncFromOutside(WebObjectInfo transform)
     {
         WebVector3 position = transform.position;
         WebVector3 scale = transform.scale;
@@ -58,49 +74,75 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
+
+
+
+
+    /// <summary>
+    /// Externally enable/disable the Rigidbody's Gravity
+    /// </summary>
+    /// <param name="active"></param>
     public void SetGravity(bool active)
     {
         if (m_rb != null)
-        {
             EnableGravity(active);
-        }
     }
 
+    /// <summary>
+    /// Determines if this object should calculate gravity
+    /// </summary>
+    /// <param name="active"></param>
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
 
-        SetGravity(active);
+        if(!m_grabbed)
+            SetGravity(active);
     }
 
+
+
+
+
+    /// <summary>
+    /// Forcibly sever the parent relationship between the object and itself
+    /// </summary>
     public void ForceReleaseSelf()
     {
         if (m_mainParent != null)
         {
             m_mainParent = null;
             m_subParent = null;
-            m_locked = false;
+            m_grabbed = false;
 
             RbGripSwitch(false);
         }
     }
 
-    public void ForceReleaseRemote()
+    /// <summary>
+    /// Forcibly sever the parent relationship between the object and itself on external request
+    /// </summary>
+    public void ForceReleaseFromOutside()
     {
         if(m_mainParent != null)
         {
             m_mainParent = null;
             m_subParent = null;
-            m_locked = false;
+            m_grabbed = false;
 
             RbGripSwitch(false);
         }
     }
 
+    /// <summary>
+    /// Forcibly sever the parent relationship between this object and all players
+    /// </summary>
     public void ForceRelease()
     {
+        // sever parenting with yourself
         ForceReleaseSelf();
 
+        // Requesting other players to sever the parental relationship with the object
         TLabSyncJson obj = new TLabSyncJson
         {
             role = (int)WebRole.guest,
@@ -116,12 +158,15 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         Debug.Log("tlabvrhand: " + "force release");
     }
 
-    public void GrabbLockSelf(bool active)
-    {
-        m_locked = active;
-    }
 
-    public void GrabbLockRemote(bool active)
+
+
+
+    /// <summary>
+    /// This object is locked/unlocked by another player
+    /// </summary>
+    /// <param name="active"></param>
+    public void GrabbLockFromOutside(bool active)
     {
         if (active == true)
         {
@@ -131,14 +176,25 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 m_subParent = null;
             }
 
-            m_locked = true;
+            m_grabbed = true;
         }
         else
-        {
-            m_locked = false;
-        }
+            m_grabbed = false;
     }
 
+    /// <summary>
+    /// lock/unlock an object from itself
+    /// </summary>
+    /// <param name="active"></param>
+    public void GrabbLockSelf(bool active)
+    {
+        m_grabbed = active;
+    }
+
+    /// <summary>
+    /// Lock/Unlock this object from other players
+    /// </summary>
+    /// <param name="active"></param>
     public void GrabbLock(bool active)
     {
         TLabSyncJson obj = new TLabSyncJson
@@ -157,6 +213,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         Debug.Log("tlabvrhand: " + "grabb lock");
     }
 
+
+
+
+
     protected override void EnableGravity(bool active)
     {
         base.EnableGravity(active);
@@ -164,13 +224,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     protected override void RbGripSwitch(bool grip)
     {
-        if (m_rbAllocated == true && m_useGravity == true)
+        if (m_rbAllocated && m_useGravity)
         {
+            // When I myself was in charge of calculating the gravity of this object
             EnableGravity(!grip);
         }
-
-        if (m_enableSync == true && m_useRigidbody == true && m_useGravity == true)
+        else if (m_enableSync && m_useRigidbody && m_useGravity)
         {
+            // Requests the player responsible for computing gravity for this object to temporarily stop computing gravity
             TLabSyncJson obj = new TLabSyncJson
             {
                 role = (int)WebRole.guest,
@@ -200,7 +261,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public override bool AddParent(GameObject parent)
     {
-        if(m_locked == true)
+        if(m_locked == true && m_grabbed == true)
         {
             return false;
         }
@@ -275,12 +336,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return false;
     }
 
+    /// <summary>
+    /// Synchronize this object's transforms externally
+    /// Optimized using StringBuilder compared to built-in Json generation function
+    /// </summary>
     public void SyncTransform()
     {
         if (m_enableSync == false)
             return;
-
-        // Optimized to reduce the amount of data
 
         builder.Clear();
 
@@ -361,6 +424,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         string json = builder.ToString();
 
+        #region Packet to make
         //TLabSyncJson obj = new TLabSyncJson
         //{
         //    role = (int)WebRole.guest,
@@ -396,45 +460,17 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         //};
 
         //string json = JsonUtility.ToJson(obj);
+        #endregion
 
         TLabSyncClient.Instalce.SendWsMessage(json);
     }
 
     protected override void UpdateScale()
     {
-        Vector3 positionMain = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
-        Vector3 positionSub = m_subParent.transform.TransformPoint(m_subPositionOffset);
+        base.UpdateScale();
 
-        // この処理の最初の実行時，必ずpositionMainとpositionSubは同じ座標になる
-        // 拡縮の基準が小さくなりすぎてしまい，不都合
-        // ---> 手の位置に座標を補間して，2つの座標を意図的にずらす
-
-        float ratioParent = 1 - m_scalingFactor;
-        Vector3 scalingPositionMain = m_mainParent.transform.position * m_parentScalingFactor + positionMain * m_scalingFactor;
-        Vector3 scalingPositionSub = m_subParent.transform.position * m_parentScalingFactor + positionSub * m_scalingFactor;
-
-        if (m_scaleInitialDistance == -1.0f)
-        {
-            m_scaleInitialDistance = (scalingPositionMain - scalingPositionSub).magnitude;
-            m_scaleInitial = this.transform.localScale;
-        }
-        else
-        {
-            float scaleRatio = (scalingPositionMain - scalingPositionSub).magnitude / m_scaleInitialDistance;
-
-            this.transform.localScale = scaleRatio * m_scaleInitial;
-
-            if (m_useRigidbody == true)
-            {
-                m_rb.MovePosition(positionMain * 0.5f + positionSub * 0.5f);
-            }
-            else
-            {
-                this.transform.position = positionMain * 0.5f + positionSub * 0.5f;
-            }
-
+        if (m_scaleInitialDistance != -1.0f)
             SyncTransform();
-        }
     }
 
     protected override void UpdatePosition()
@@ -453,14 +489,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_mainParent != null)
         {
-            if (m_subParent != null && m_scaling == true)
-            {
+            if (m_subParent != null && m_scaling)
                 UpdateScale();
-            }
             else
             {
                 m_scaleInitialDistance = -1.0f;
-
                 UpdatePosition();
             }
         }
@@ -468,10 +501,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             m_scaleInitialDistance = -1.0f;
 
-            if(m_enableSync == true && (m_autoSync == true || m_rbAllocated == true && CanRbSync == true))
-            {
+            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync))
                 SyncTransform();
-            }
         }
     }
 }

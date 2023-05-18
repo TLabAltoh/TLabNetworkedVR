@@ -34,6 +34,14 @@ public class TLabVRTrackingHand : MonoBehaviour
         public UnityEvent onRecognized;
     }
 
+    public TLabVRGrabbable CurrentGrabbable
+    {
+        get
+        {
+            return m_grabbable;
+        }
+    }
+
     private void SavePose()
     {
         Gesture g = new Gesture();

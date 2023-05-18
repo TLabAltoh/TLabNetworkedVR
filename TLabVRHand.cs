@@ -38,6 +38,14 @@ public class TLabVRHand : MonoBehaviour
         }
     }
 
+    public TLabVRGrabbable CurrentGrabbable
+    {
+        get
+        {
+            return m_grabbable;
+        }
+    }
+
     void Start()
     {
         m_handInitialized = true;

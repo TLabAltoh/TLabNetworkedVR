@@ -4,16 +4,27 @@ public class TLabVRGrabbable : MonoBehaviour
 {
     public const int PARENT_LENGTH = 2;
 
-    [Header("Rigidbody")]
+    [Header("Rigidbody Setting")]
+
+    [Tooltip("Rigidbody is applied at runtime")]
     [SerializeField] protected bool m_useRigidbody = true;
+
+    [Tooltip("Rigidbody gravity is enabled")]
     [SerializeField] protected bool m_useGravity = false;
 
-    [Header("Transform fix")]
+    [Header("Transform update settings")]
+
+    [Tooltip("When you grab an object, the object follows your hand movement.")]
     [SerializeField] protected bool m_positionFixed = true;
+
+    [Tooltip("When grabbing an object, the object follows the rotation of the hand")]
     [SerializeField] protected bool m_rotateFixed = true;
+
+    [Tooltip("When grabbing an object with both hands, the object is scaled")]
     [SerializeField] protected bool m_scaling = true;
 
     [Header("Scaling Factor")]
+    [Tooltip("Specifies the ease of scaling an object with a factor")]
     [SerializeField, Range(0.0f, 0.25f)] protected float m_scalingFactor;
 
     protected GameObject m_mainParent;
@@ -28,7 +39,7 @@ public class TLabVRGrabbable : MonoBehaviour
     protected Rigidbody m_rb;
 
     protected float m_scaleInitialDistance = -1.0f;
-    protected float m_parentScalingFactor;
+    protected float m_scalingFactorInvert;
     protected Vector3 m_scaleInitial;
 
     public bool Grabbed
@@ -57,9 +68,7 @@ public class TLabVRGrabbable : MonoBehaviour
     protected virtual void RbGripSwitch(bool grip)
     {
         if (m_useGravity == true)
-        {
             EnableGravity(!grip);
-        }
     }
 
     protected virtual void MainParentGrabbStart()
@@ -151,9 +160,8 @@ public class TLabVRGrabbable : MonoBehaviour
         // ägèkÇÃäÓèÄÇ™è¨Ç≥Ç≠Ç»ÇËÇ∑Ç¨ÇƒÇµÇ‹Ç¢ÅCïsìsçá
         // ---> éËÇÃà íuÇ…ç¿ïWÇï‚ä‘ÇµÇƒÅC2Ç¬ÇÃç¿ïWÇà”ê}ìIÇ…Ç∏ÇÁÇ∑
 
-        float ratioParent = 1 - m_scalingFactor;
-        Vector3 scalingPositionMain = m_mainParent.transform.position * m_parentScalingFactor + positionMain * m_scalingFactor;
-        Vector3 scalingPositionSub = m_subParent.transform.position * m_parentScalingFactor + positionSub * m_scalingFactor;
+        Vector3 scalingPositionMain = m_mainParent.transform.position * m_scalingFactorInvert + positionMain * m_scalingFactor;
+        Vector3 scalingPositionSub = m_subParent.transform.position * m_scalingFactorInvert + positionSub * m_scalingFactor;
 
         if (m_scaleInitialDistance == -1.0f)
         {
@@ -175,14 +183,12 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected virtual void UpdatePosition()
     {
-        if (m_useRigidbody == true)
+        if (m_useRigidbody)
         {
-            if (m_positionFixed == true)
-            {
+            if (m_positionFixed)
                 m_rb.MovePosition(m_mainParent.transform.TransformPoint(m_mainPositionOffset));
-            }
 
-            if (m_rotateFixed == true)
+            if (m_rotateFixed)
             {
                 // https://qiita.com/yaegaki/items/4d5a6af1d1738e102751
                 Quaternion deltaQuaternion = Quaternion.identity * m_mainParent.transform.rotation * Quaternion.Inverse(m_mainQuaternionStart);
@@ -191,12 +197,10 @@ public class TLabVRGrabbable : MonoBehaviour
         }
         else
         {
-            if (m_positionFixed == true)
-            {
+            if (m_positionFixed)
                 this.transform.position = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
-            }
 
-            if (m_rotateFixed == true)
+            if (m_rotateFixed)
             {
                 // https://qiita.com/yaegaki/items/4d5a6af1d1738e102751
                 Quaternion deltaQuaternion = Quaternion.identity * m_mainParent.transform.rotation * Quaternion.Inverse(m_mainQuaternionStart);
@@ -216,17 +220,15 @@ public class TLabVRGrabbable : MonoBehaviour
             EnableGravity(m_useGravity);
         }
 
-        m_parentScalingFactor = 1 - m_scalingFactor;
+        m_scalingFactorInvert = 1 - m_scalingFactor;
     }
 
     protected virtual void Update()
     {
         if(m_mainParent != null)
         {
-            if(m_subParent != null && m_scaling == true)
-            {
+            if(m_subParent != null && m_scaling)
                 UpdateScale();
-            }
             else
             {
                 m_scaleInitialDistance = -1.0f;
@@ -235,8 +237,6 @@ public class TLabVRGrabbable : MonoBehaviour
             }
         }
         else
-        {
             m_scaleInitialDistance = -1.0f;
-        }
     }
 }
