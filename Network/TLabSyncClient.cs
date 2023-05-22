@@ -146,9 +146,9 @@ public class TLabSyncClient : MonoBehaviour
 
     [Tooltip("Other people's avatars that you can see")]
     [Header("Guest Avator")]
+    [SerializeField] private GameObject m_guestHead;
     [SerializeField] private GameObject m_guestRTouch;
     [SerializeField] private GameObject m_guestLTouch;
-    [SerializeField] private GameObject m_guestHead;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
@@ -158,7 +158,7 @@ public class TLabSyncClient : MonoBehaviour
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
 
-    private const string prefabName = "OVRControllerPrefab.";
+    private const string prefabName = "OVRGuestAnchor.";
 
     public Hashtable Grabbables
     {
@@ -186,7 +186,11 @@ public class TLabSyncClient : MonoBehaviour
             {
                 TLabSyncGrabbable[] grabbables = FindObjectsOfType<TLabSyncGrabbable>();
                 foreach (TLabSyncGrabbable grabbable in grabbables)
-                    grabbable.SyncTransform();
+                {
+                    GameObject go = grabbable.gameObject;
+                    if(go != m_leftHand && go != m_rightHand && go != m_cameraRig)
+                        grabbable.SyncTransform();
+                }
             }
 
             string json =
@@ -233,6 +237,9 @@ public class TLabSyncClient : MonoBehaviour
                         m_rightHand.name = prefabName + obj.seatIndex.ToString() + ".RTouch";
                         m_leftHand.name = prefabName + obj.seatIndex.ToString() + ".LTouch";
                         m_cameraRig.name = prefabName + obj.seatIndex.ToString() + ".Head";
+
+                        m_cameraRig.transform.localPosition = Vector3.zero;
+                        m_cameraRig.transform.localRotation = Quaternion.identity;
 
                         m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
                         m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;

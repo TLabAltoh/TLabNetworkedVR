@@ -121,9 +121,9 @@ public class TLabVRTrackingHand : MonoBehaviour
 
         bool grip = DetectGesture() == "Grabb";
 
-        m_laserPointer.maxLength = (m_hand.GetFingerPinchStrength(OVRHand.HandFinger.Index) > 0.1f) ? m_maxDistance : 0.0f;
+        m_laserPointer.maxLength = (m_hand.GetFingerPinchStrength(OVRHand.HandFinger.Index) > 0.3f) ? m_maxDistance : 0.0f;
 
-        if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
+        if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.1f, m_layerMask))
         {
             if(m_grabbable != null)
             {
