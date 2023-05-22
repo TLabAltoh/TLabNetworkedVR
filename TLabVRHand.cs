@@ -53,13 +53,9 @@ public class TLabVRHand : MonoBehaviour
         m_laserPointerMaxLength = m_laserPointer.maxLength;
 
         if(m_controller == OVRInput.Controller.RTouch)
-        {
             m_anchor = m_cameraRig.rightHandAnchor;
-        }
         else if(m_controller == OVRInput.Controller.LTouch)
-        {
             m_anchor = m_cameraRig.leftHandAnchor;
-        }
         else
         {
             m_handInitialized = false;
@@ -70,9 +66,7 @@ public class TLabVRHand : MonoBehaviour
     void Update()
     {
         if(m_handInitialized == false)
-        {
             return;
-        }
 
         Ray ray = new Ray(m_anchor.position, m_anchor.forward);
 
@@ -102,9 +96,7 @@ public class TLabVRHand : MonoBehaviour
                 TLabOutlineSelectable selectable = target.GetComponent<TLabOutlineSelectable>();
 
                 if (selectable != null)
-                {
                     selectable.Selected = true;
-                }
 
                 //
                 // Grip
@@ -116,14 +108,10 @@ public class TLabVRHand : MonoBehaviour
                     TLabVRGrabbable grabbable = target.GetComponent<TLabVRGrabbable>();
 
                     if (grabbable == null)
-                    {
                         return;
-                    }
 
                     if (grabbable.AddParent(this.gameObject) == true)
-                    {
                         m_grabbable = grabbable;
-                    }
                 }
             }
         }

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class TLabVRTrackingHand : MonoBehaviour
 {
@@ -15,6 +14,7 @@ public class TLabVRTrackingHand : MonoBehaviour
     [Header("Gesture")]
     [SerializeField] private OVRSkeleton m_skeleton;
     [SerializeField] private List<Gesture> m_gestures;
+    [SerializeField] private float threshold = 0.05f;
     [SerializeField] private bool m_debugMode;
 
     private List<OVRBone> m_fingerBones;
@@ -22,15 +22,15 @@ public class TLabVRTrackingHand : MonoBehaviour
 
     private RaycastHit m_raycastHit;
 
+    private bool m_grabbPrev = false;
+
     private bool m_skeltonInitialized;
-    private const float threshold = 0.1f;
 
     [System.Serializable]
     public struct Gesture
     {
         public string name;
         public List<Vector3> fingerDatas;
-        public UnityEvent onRecognized;
     }
 
     public TLabVRGrabbable CurrentGrabbable
@@ -41,20 +41,26 @@ public class TLabVRTrackingHand : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Record the current position of the OVRBone relative to the hand
+    /// Right-click to copy from the Inspector and paste after playback is complete
+    /// </summary>
     private void SavePose()
     {
         Gesture g = new Gesture();
         g.name = "New Gesture";
         List<Vector3> data = new List<Vector3>();
         foreach(var bone in m_fingerBones)
-        {
             data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
-        }
 
         g.fingerDatas = data;
         m_gestures.Add(g);
     }
 
+    /// <summary>
+    /// Get the current gesture
+    /// </summary>
+    /// <returns></returns>
     private string DetectGesture()
     {
         string result = null;
@@ -88,13 +94,32 @@ public class TLabVRTrackingHand : MonoBehaviour
         return result;
     }
 
+    /// <summary>
+    /// Returns true only on the first frame when the gesture is judged
+    /// </summary>
+    /// <returns></returns>
+    private bool GetGrabbDown()
+    {
+        bool grabb = DetectGesture() == "Grabb";
+        bool grabbDown = grabb;
+
+        if (m_grabbPrev == true)
+            grabbDown = false;
+
+        m_grabbPrev = grabb;
+
+        return grabbDown;
+    }
+
+    /// <summary>
+    /// Task to wait until skeleton's bones are initialized
+    /// </summary>
+    /// <returns></returns>
     IEnumerator WaitForSkeltonInitialized()
     {
         // https://communityforums.atmeta.com/t5/Unity-VR-Development/Bones-list-is-empty/td-p/880261
         while (m_skeleton.Bones.Count == 0)
-        {
             yield return null;
-        }
 
         m_fingerBones = new List<OVRBone>(m_skeleton.Bones);
         m_skeltonInitialized = true;
@@ -120,10 +145,12 @@ public class TLabVRTrackingHand : MonoBehaviour
             return;
 
         bool grip = DetectGesture() == "Grabb";
+        bool grabbDown = GetGrabbDown();
 
-        m_laserPointer.maxLength = (m_hand.GetFingerPinchStrength(OVRHand.HandFinger.Index) > 0.3f) ? m_maxDistance : 0.0f;
+        //m_laserPointer.maxLength = (m_hand.GetFingerPinchStrength(OVRHand.HandFinger.Index) > 0.1f) ? m_maxDistance : 0.0f;
+        m_laserPointer.maxLength = !grip ? m_maxDistance : 0.0f;
 
-        if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.1f, m_layerMask))
+        if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
         {
             if(m_grabbable != null)
             {
@@ -135,21 +162,16 @@ public class TLabVRTrackingHand : MonoBehaviour
             }
             else
             {
-                if (grip)
+                if (grabbDown)
                 {
                     GameObject target = m_raycastHit.collider.gameObject;
-
                     TLabVRGrabbable grabbable = target.GetComponent<TLabVRGrabbable>();
 
                     if (grabbable == null)
-                    {
                         return;
-                    }
 
                     if (grabbable.AddParent(this.gameObject) == true)
-                    {
                         m_grabbable = grabbable;
-                    }
                 }
             }
         }
