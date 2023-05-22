@@ -18,7 +18,6 @@ public class TLabVRTrackingHand : MonoBehaviour
     [SerializeField] private bool m_debugMode;
 
     private List<OVRBone> m_fingerBones;
-    private Transform m_anchor;
     private TLabVRGrabbable m_grabbable;
 
     private RaycastHit m_raycastHit;
@@ -106,18 +105,7 @@ public class TLabVRTrackingHand : MonoBehaviour
         m_skeltonInitialized = false;
 
         if(m_skeleton != null)
-        {
             StartCoroutine(WaitForSkeltonInitialized());
-        }
-
-        if(m_hand == null)
-        {
-            Debug.LogError("ovrhand is null");
-        }
-        else
-        {
-            m_anchor = this.transform;
-        }
     }
 
     void Update()

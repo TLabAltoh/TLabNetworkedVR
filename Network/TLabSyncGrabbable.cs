@@ -15,7 +15,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     [SerializeField] public bool m_locked = false;
 
     private bool m_rbAllocated = true;
-    [System.NonSerialized] public bool m_grabbed = false;
+    private int m_grabbed = -1;
 
     // https://www.fenet.jp/dotnet/column/language/4836/
     // A fast approach to string processing
@@ -43,6 +43,23 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         get
         {
             return m_useGravity;
+        }
+    }
+
+
+    public int GrabbedIndex
+    {
+        get
+        {
+            return m_grabbed;
+        }
+    }
+
+    public bool RbAllocated
+    {
+        get
+        {
+            return m_rbAllocated;
         }
     }
 
@@ -95,7 +112,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
-        SetGravity((!m_grabbed && active) ? true : false);
+        SetGravity((m_grabbed == -1 && active) ? true : false);
     }
 
 
@@ -111,7 +128,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             m_mainParent = null;
             m_subParent = null;
-            m_grabbed = false;
+            m_grabbed = -1;
 
             RbGripSwitch(false);
         }
@@ -126,7 +143,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             m_mainParent = null;
             m_subParent = null;
-            m_grabbed = false;
+            m_grabbed = -1;
 
             RbGripSwitch(false);
         }
@@ -163,10 +180,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     /// <summary>
     /// This object is locked/unlocked by another player
     /// </summary>
-    /// <param name="active"></param>
-    public void GrabbLockFromOutside(bool active)
+    /// <param name="index"></param>
+    public void GrabbLockFromOutside(int index)
     {
-        if (active == true)
+        if (index != -1)
         {
             if (m_mainParent != null)
             {
@@ -174,19 +191,19 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 m_subParent = null;
             }
 
-            m_grabbed = true;
+            m_grabbed = index;
         }
         else
-            m_grabbed = false;
+            m_grabbed = -1;
     }
 
     /// <summary>
     /// lock/unlock an object from itself
     /// </summary>
-    /// <param name="active"></param>
-    public void GrabbLockSelf(bool active)
+    /// <param name="index"></param>
+    public void GrabbLockSelf(int index)
     {
-        m_grabbed = active;
+        m_grabbed = index;
     }
 
     /// <summary>
@@ -199,7 +216,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             role = (int)WebRole.guest,
             action = (int)WebAction.grabbLock,
-            active = active,
+            seatIndex = active ? TLabSyncClient.Instalce.SeatIndex : -1,
             transform = new WebObjectInfo
             {
                 id = this.gameObject.name
@@ -259,7 +276,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public override bool AddParent(GameObject parent)
     {
-        if(m_locked == true && m_grabbed == true)
+        if(m_locked == true && m_grabbed != -1)
         {
             return false;
         }

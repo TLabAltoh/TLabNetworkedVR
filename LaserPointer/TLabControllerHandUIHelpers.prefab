@@ -159,7 +159,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4297317365320585188}
   m_Layer: 0
-  m_Name: TLabUIHelpers
+  m_Name: TLabControllerHandUIHelpers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

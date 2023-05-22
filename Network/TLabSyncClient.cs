@@ -168,6 +168,14 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
+    public int SeatIndex
+    {
+        get
+        {
+            return m_seatIndex;
+        }
+    }
+
     async void Start()
     {
         websocket = new WebSocket(m_serverAddr);
@@ -220,12 +228,15 @@ public class TLabSyncClient : MonoBehaviour
                 {
                     m_seatIndex = obj.seatIndex;
 
-                    if (m_leftHand != null && m_rightHand != null)
+                    if (m_leftHand != null && m_rightHand != null && m_cameraRig != null)
                     {
                         m_rightHand.name = prefabName + obj.seatIndex.ToString() + ".RTouch";
                         m_leftHand.name = prefabName + obj.seatIndex.ToString() + ".LTouch";
+                        m_cameraRig.name = prefabName + obj.seatIndex.ToString() + ".Head";
+
                         m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
                         m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
+                        m_cameraRig.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
                     }
 
                     // TAdd TLabSyncGrabbable to hash table for fast lookup by name
@@ -268,6 +279,17 @@ public class TLabSyncClient : MonoBehaviour
                     {
                         m_grabbables.Remove(guestHead.name);
                         UnityEngine.GameObject.Destroy(guestHead);
+                    }
+
+                    TLabSyncGrabbable[] grabbables = FindObjectsOfType<TLabSyncGrabbable>();
+                    foreach (TLabSyncGrabbable grabbable in grabbables)
+                    {
+                        if(grabbable.GrabbedIndex == obj.seatIndex)
+                        {
+                            grabbable.GrabbLockSelf(-1);
+                            if (grabbable.RbAllocated)
+                                grabbable.SetGravity(true);
+                        }
                     }
 
                     Debug.Log("tlabwebsocket: guest disconncted . " + obj.seatIndex.ToString());
@@ -389,7 +411,7 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if(obj.action == (int)WebAction.syncTransform)
+            else
             {
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
@@ -402,7 +424,7 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.setGravity)
                     grabbable.SetGravity(obj.active);
                 else if (obj.action == (int)WebAction.grabbLock)
-                    grabbable.GrabbLockFromOutside(obj.active);
+                    grabbable.GrabbLockFromOutside(obj.seatIndex);
                 else if (obj.action == (int)WebAction.forceRelease)
                     grabbable.ForceReleaseFromOutside();
 
