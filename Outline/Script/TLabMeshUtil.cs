@@ -20,13 +20,9 @@ public static class TLabMeshUtil
         var mesh = GameObject.Instantiate(c.sharedMesh);
         var asset = AssetDatabase.LoadAssetAtPath<Mesh>(path);
         if (asset != null)
-        {
             EditorUtility.CopySerialized(asset, mesh);
-        }
         else
-        {
             AssetDatabase.CreateAsset(mesh, path);
-        }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

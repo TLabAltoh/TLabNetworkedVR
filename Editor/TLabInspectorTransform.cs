@@ -29,6 +29,10 @@ public class SaveTransform
 [CanEditMultipleObjects]
 public class TLabInspectorTransform : Editor
 {
+    //
+    // Created to reflect changes in Transform.localPosition while the scene is running, even after play ends
+    //
+
     private Editor editor;
     private Transform myParam;
     private bool set;

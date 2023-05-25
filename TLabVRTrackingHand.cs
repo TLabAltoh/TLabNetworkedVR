@@ -4,17 +4,35 @@ using UnityEngine;
 
 public class TLabVRTrackingHand : MonoBehaviour
 {
-    [Header("Hand Data")]
+    [Header("Hand Settings")]
+
+    [Tooltip("OVRHand controlled by this hand")]
     [SerializeField] private OVRHand m_hand;
+
+    [Tooltip("This hand-controlled laser pointer")]
     [SerializeField] private LaserPointer m_laserPointer;
+
+    [Tooltip("Maximum length of laser pointer")]
     [SerializeField] private float m_maxDistance = 10.0f;
+
+    [Tooltip("When grabbing an object, use this object's Transform.forward as a Ray to determine the object")]
     [SerializeField] private Transform m_grabbAnchor;
+
+    [Tooltip("Specify the layer of the object you want to grab")]
     [SerializeField] private LayerMask m_layerMask;
 
     [Header("Gesture")]
+
+    [Tooltip("Bones to be controlled by hand tracking are retrieved from the skeleton")]
     [SerializeField] private OVRSkeleton m_skeleton;
+
+    [Tooltip("Saved gesture (local Transform.position of the hand bone)")]
     [SerializeField] private List<Gesture> m_gestures;
+
+    [Tooltip("Define how much error to allow for when judging a gesture versus a hand bone gesture")]
     [SerializeField] private float threshold = 0.05f;
+
+    [Tooltip("While in debug mode, the gesture can be saved by pressing the space button")]
     [SerializeField] private bool m_debugMode;
 
     private List<OVRBone> m_fingerBones;
@@ -147,7 +165,6 @@ public class TLabVRTrackingHand : MonoBehaviour
         bool grip = DetectGesture() == "Grabb";
         bool grabbDown = GetGrabbDown();
 
-        //m_laserPointer.maxLength = (m_hand.GetFingerPinchStrength(OVRHand.HandFinger.Index) > 0.1f) ? m_maxDistance : 0.0f;
         m_laserPointer.maxLength = !grip ? m_maxDistance : 0.0f;
 
         if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
@@ -164,6 +181,10 @@ public class TLabVRTrackingHand : MonoBehaviour
             {
                 if (grabbDown)
                 {
+                    //
+                    // Grip
+                    //
+
                     GameObject target = m_raycastHit.collider.gameObject;
                     TLabVRGrabbable grabbable = target.GetComponent<TLabVRGrabbable>();
 
@@ -172,6 +193,14 @@ public class TLabVRTrackingHand : MonoBehaviour
 
                     if (grabbable.AddParent(this.gameObject) == true)
                         m_grabbable = grabbable;
+                }
+                else if(m_hand.GetFingerIsPinching(OVRHand.HandFinger.Index) == true)
+                {
+                    //
+                    // Rotation
+                    // 
+
+
                 }
             }
         }
