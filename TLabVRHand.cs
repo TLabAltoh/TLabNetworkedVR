@@ -2,11 +2,24 @@ using UnityEngine;
 
 public class TLabVRHand : MonoBehaviour
 {
+    [Header("Controller Settings")]
+
+    [Tooltip("OVR controller controlled by this hand (LTouch or RTouch)")]
     [SerializeField] private OVRInput.Controller m_controller;
+
+    [Tooltip("This controller-controlled laser pointer")]
     [SerializeField] private LaserPointer m_laserPointer;
-    [SerializeField] private OVRInput.Axis1D m_gripAxis;
-    [SerializeField] private OVRInput.Button m_gripButton;
+
+    [Tooltip("Maximum length of laser pointer")]
     [SerializeField] private float m_maxDistance = 10.0f;
+
+    [Tooltip("Buttons on the controller used to grab objects")]
+    [SerializeField] private OVRInput.Axis1D m_gripAxis;
+
+    [Tooltip("Select the same button as GripAxis")]
+    [SerializeField] private OVRInput.Button m_gripButton;
+
+    [Tooltip("Specify the layer of the object you want to grab")]
     [SerializeField] private LayerMask m_layerMask;
 
     private Transform m_anchor;

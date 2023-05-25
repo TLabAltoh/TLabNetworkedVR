@@ -6,7 +6,11 @@ using UnityEditor;
 #if UNITY_EDITOR
 public class TLabOutlineManager : MonoBehaviour
 {
+    [Tooltip("All objects that have an Outline material assigned to them are stored here.\n" +
+             "Outline will not function properly unless you edit the vertex colors on the objects beforehand from this script.")]
     [SerializeField] private GameObject[] m_outlineTarget;
+
+    [Tooltip("Location of mesh copied for outline")]
     [SerializeField] private string m_savePath;
 
     const float error = 1e-8f;
@@ -37,13 +41,10 @@ public class TLabOutlineManager : MonoBehaviour
                     var v = vertices[i] - vertices[j];
 
                     if (v.sqrMagnitude < error)
-                    {
                         softEdge += normals[j];
-                    }
                 }
 
                 softEdge.Normalize();
-
                 softEdges[i] = new Color(softEdge.x, softEdge.y, softEdge.z, 0);
             }
             mesh.colors = softEdges;
@@ -52,13 +53,9 @@ public class TLabOutlineManager : MonoBehaviour
             Mesh copyMesh = GameObject.Instantiate(mesh);
             Mesh asset = AssetDatabase.LoadAssetAtPath<Mesh>(path);
             if (asset != null)
-            {
                 EditorUtility.CopySerialized(asset, copyMesh);
-            }
             else
-            {
                 AssetDatabase.CreateAsset(copyMesh, path);
-            }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -70,9 +67,7 @@ public class TLabOutlineManager : MonoBehaviour
     public void BakeVertexColor()
     {
         for (int i = 0; i < m_outlineTarget.Length; i++)
-        {
             BakeNormal(m_outlineTarget[i]);
-        }
     }
 
     public void SelectSavePath()
@@ -80,9 +75,7 @@ public class TLabOutlineManager : MonoBehaviour
         string path = EditorUtility.SaveFolderPanel("Save Path", "Assets", "");
 
         if (path == null)
-        {
             return;
-        }
 
         string fullPath = System.IO.Directory.GetCurrentDirectory();
 
