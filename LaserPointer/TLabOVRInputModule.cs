@@ -5,7 +5,7 @@ namespace UnityEngine.EventSystems
 {
     /// <summary>
     /// VR extension of PointerInputModule which supports gaze and controller pointing.
-    /// OVRInputModuleの両手対応
+    /// OVRInputModuleの両手操作に対応した拡張コンポーネント
     /// Android ビルドに向けて書いたコードであることに注意
     /// </summary>
     public class TLabOVRInputModule : PointerInputModule
