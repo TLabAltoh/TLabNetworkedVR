@@ -32,12 +32,12 @@ public class TLabVRRotatable : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (IsGrabbled == false)
+        if (IsGrabbled == false && m_angle > 0f)
         {
             this.transform.rotation = Quaternion.AngleAxis(m_angle, m_axis) * this.transform.rotation;
             m_angle = Mathf.Clamp(m_angle - 0.1f * Time.deltaTime, 0, float.MaxValue);
         }
         else
-            m_angle = 0;
+            m_angle = 0f;
     }
 }

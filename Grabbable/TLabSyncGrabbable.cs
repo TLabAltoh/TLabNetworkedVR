@@ -20,6 +20,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     private bool m_rbAllocated = true;
     private int m_grabbed = -1;
 
+    private bool m_isSyncFromOutside = false;
+
     // https://www.fenet.jp/dotnet/column/language/4836/
     // A fast approach to string processing
 
@@ -66,6 +68,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
+    public bool IsSyncFromOutside
+    {
+        get
+        {
+            return m_isSyncFromOutside;
+        }
+    }
+
 
 
 
@@ -92,6 +102,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             this.transform.position = new Vector3(position.x, position.y, position.z);
             this.transform.rotation = new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
         }
+
+        m_isSyncFromOutside = true;
     }
 
 
@@ -490,6 +502,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         #endregion
 
         TLabSyncClient.Instalce.SendWsMessage(json);
+
+        m_isSyncFromOutside = false;
     }
 
     protected override void UpdateScale()
