@@ -257,7 +257,7 @@ public class TLabSyncClient : MonoBehaviour
                         }
                         else
                         {
-                            Transform anchor = m_guestAnchors[m_seatIndex - 1];
+                            Transform anchor = m_guestAnchors[m_seatIndex];
                             m_rootTransform.position = m_hostAnchor.position;
                             m_rootTransform.rotation = m_hostAnchor.rotation;
                         }
