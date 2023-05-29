@@ -5,6 +5,7 @@ public class TLabVRRotatable : MonoBehaviour
     private TLabVRGrabbable m_grabbable;
     protected Vector3 m_axis;
     protected float m_angle;
+    protected bool m_onShot = false;
 
     protected virtual bool IsGrabbled
     {
@@ -20,6 +21,8 @@ public class TLabVRRotatable : MonoBehaviour
         {
             m_axis = axis;
             m_angle = angle;
+
+            m_onShot = true;
         }
     }
 
@@ -32,12 +35,14 @@ public class TLabVRRotatable : MonoBehaviour
 
     protected virtual void Update()
     {
-        if (IsGrabbled == false && m_angle > 0f)
+        if (IsGrabbled == false && m_onShot == true && m_angle > 0f)
         {
             this.transform.rotation = Quaternion.AngleAxis(m_angle, m_axis) * this.transform.rotation;
             m_angle = Mathf.Clamp(m_angle - 0.1f * Time.deltaTime, 0, float.MaxValue);
         }
         else
             m_angle = 0f;
+
+        m_onShot = false;
     }
 }

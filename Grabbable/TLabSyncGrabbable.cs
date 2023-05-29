@@ -300,10 +300,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public override bool AddParent(GameObject parent)
     {
-        if(m_locked == true && m_grabbed != -1)
-        {
+        if(m_locked == true || m_grabbed != -1)
             return false;
-        }
 
         if (m_mainParent == null)
         {
