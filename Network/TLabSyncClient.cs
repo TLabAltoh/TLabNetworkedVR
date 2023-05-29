@@ -257,9 +257,9 @@ public class TLabSyncClient : MonoBehaviour
                         }
                         else
                         {
-                            Transform anchor = m_guestAnchors[m_seatIndex];
-                            m_rootTransform.position = m_hostAnchor.position;
-                            m_rootTransform.rotation = m_hostAnchor.rotation;
+                            Transform anchor = m_guestAnchors[m_seatIndex - 1];
+                            m_rootTransform.position = anchor.position;
+                            m_rootTransform.rotation = anchor.rotation;
                         }
 
                         m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
