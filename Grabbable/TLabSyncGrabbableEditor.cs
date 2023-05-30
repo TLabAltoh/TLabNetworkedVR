@@ -13,12 +13,16 @@ public class TLabSyncGrabbableEditor : Editor
     {
         base.OnInspectorGUI();
 
+        serializedObject.Update();
+
         TLabSyncGrabbable grabbable = target as TLabSyncGrabbable;
 
         TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
         if (rotatable != null)
             grabbable.InitializeRotatable();
+
+        serializedObject.ApplyModifiedProperties();
     }
 }
 #endif

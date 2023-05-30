@@ -251,8 +251,12 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (EditorApplication.isPlaying == true)
             return;
 
-        base.InitializeRotatable();
-        m_autoSync = false;
+        m_useGravity = false;
+    }
+
+    public override void UseRigidbody(bool rigidbody, bool gravity)
+    {
+        base.UseRigidbody(rigidbody, gravity);
     }
 #endif
 

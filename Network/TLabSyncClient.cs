@@ -370,6 +370,9 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
                         if (vrHandRight != null)
                         {
+                            if (vrHandRight.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
@@ -377,9 +380,12 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
 
-                        TLabVRHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRHand>();
+                        TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandRight != null)
                         {
+                            if (vrTrackingHandRight.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
@@ -393,6 +399,9 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
                         if (vrHandLeft != null)
                         {
+                            if (vrHandLeft.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
@@ -400,9 +409,12 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
 
-                        TLabVRHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRHand>();
+                        TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandLeft != null)
                         {
+                            if (vrTrackingHandLeft.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;

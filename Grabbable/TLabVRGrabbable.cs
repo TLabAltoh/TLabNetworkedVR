@@ -56,12 +56,23 @@ public class TLabVRGrabbable : MonoBehaviour
 #if UNITY_EDITOR
     public virtual void InitializeRotatable()
     {
-        if (EditorApplication.isPlaying == false)
-            m_useGravity = false;
+        if (EditorApplication.isPlaying == true)
+            return;
+
+        m_useGravity = false;
+    }
+
+    public virtual void UseRigidbody(bool rigidbody, bool gravity)
+    {
+        if (EditorApplication.isPlaying == true)
+            return;
+
+        m_useRigidbody = rigidbody;
+        m_useGravity = gravity;
     }
 #endif
 
-protected virtual void EnableGravity(bool active)
+    protected virtual void EnableGravity(bool active)
     {
         if (active == true)
         {

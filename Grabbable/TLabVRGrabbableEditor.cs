@@ -12,12 +12,16 @@ public class TLabVRGrabbableEditor : Editor
     {
         base.OnInspectorGUI();
 
+        serializedObject.Update();
+
         TLabVRGrabbable grabbable = target as TLabVRGrabbable;
 
         TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
         if (rotatable != null)
             grabbable.InitializeRotatable();
+
+        serializedObject.ApplyModifiedProperties();
     }
 }
 #endif
