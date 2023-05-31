@@ -17,7 +17,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     [Tooltip("Objects with this item disabled cannot be grabbed by any player")]
     [SerializeField] public bool m_locked = false;
 
-    private bool m_rbAllocated = true;
+    private bool m_rbAllocated = false;
     private int m_grabbed = -1;
 
     private bool m_isSyncFromOutside = false;
@@ -251,8 +251,12 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (EditorApplication.isPlaying == true)
             return;
 
-        base.InitializeRotatable();
-        m_autoSync = false;
+        m_useGravity = false;
+    }
+
+    public override void UseRigidbody(bool rigidbody, bool gravity)
+    {
+        base.UseRigidbody(rigidbody, gravity);
     }
 #endif
 
