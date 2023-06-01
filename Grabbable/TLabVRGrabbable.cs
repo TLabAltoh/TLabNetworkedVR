@@ -9,25 +9,25 @@ public class TLabVRGrabbable : MonoBehaviour
 
     [Header("Rigidbody Setting")]
 
-    [Tooltip("Rigidbody is applied at runtime")]
+    [Tooltip("Rigidbodyを使用するか")]
     [SerializeField] protected bool m_useRigidbody = true;
 
-    [Tooltip("Rigidbody gravity is enabled")]
+    [Tooltip("RigidbodyのUseGravityを有効化するか")]
     [SerializeField] protected bool m_useGravity = false;
 
     [Header("Transform update settings")]
 
-    [Tooltip("When you grab an object, the object follows your hand movement.")]
+    [Tooltip("掴んでいる間，オブジェクトのポジションを更新するか")]
     [SerializeField] protected bool m_positionFixed = true;
 
-    [Tooltip("When grabbing an object, the object follows the rotation of the hand")]
+    [Tooltip("掴んでいる間，オブジェクトのローテーションを更新するか")]
     [SerializeField] protected bool m_rotateFixed = true;
 
-    [Tooltip("When grabbing an object with both hands, the object is scaled")]
+    [Tooltip("両手で掴んでいる間，オブジェクトのスケールを更新するか")]
     [SerializeField] protected bool m_scaling = true;
 
     [Header("Scaling Factor")]
-    [Tooltip("Specifies the ease of scaling an object with a factor")]
+    [Tooltip("オブジェクトのスケールの更新の感度")]
     [SerializeField, Range(0.0f, 0.25f)] protected float m_scalingFactor;
 
     protected GameObject m_mainParent;
