@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -29,6 +31,10 @@ public class TLabVRGrabbable : MonoBehaviour
     [Header("Scaling Factor")]
     [Tooltip("オブジェクトのスケールの更新の感度")]
     [SerializeField, Range(0.0f, 0.25f)] protected float m_scalingFactor;
+
+    [Header("Divided Settings")]
+    [Tooltip("このコンポーネントが子階層にGrabberを束ねているか")]
+    [SerializeField] protected bool m_enableDivide = false;
 
     protected GameObject m_mainParent;
     protected GameObject m_subParent;
@@ -231,9 +237,66 @@ public class TLabVRGrabbable : MonoBehaviour
         }
     }
 
+    protected virtual T CheckParentComponent<T>(GameObject obj) where T : Component
+    {
+        var targetComp = obj.GetComponent<T>();
+        if (targetComp == null)
+            targetComp = obj.AddComponent<T>();
+
+        return targetComp;
+    }
+
+    protected virtual void SwitchDevided(bool active)
+    {
+        MeshCollider meshCollider = GetComponent<MeshCollider>();
+        if (meshCollider == null)
+            return;
+
+        meshCollider.enabled = active;
+
+
+    }
+
+    protected virtual void CreateCombineMeshCollider()
+    {
+        // 自分自身のメッシュフィルターを取得
+        MeshFilter meshFilter = this.gameObject.GetComponent<MeshFilter>();
+        if (meshFilter == null)
+            meshFilter = this.gameObject.AddComponent<MeshFilter>();
+
+        // 子オブジェクトからメッシュフィルターを取得
+        MeshFilter[] meshFilters = this.gameObject.GetComponentsInChildren<MeshFilter>();
+
+        //
+        List<MeshFilter> meshFilterList = new List<MeshFilter>();
+        for (int i = 1; i < meshFilters.Length; i++)
+            meshFilterList.Add(meshFilters[i]);
+
+        CombineInstance[] combine = new CombineInstance[meshFilterList.Count];
+
+        for (int i = 0; i < meshFilterList.Count; i++)
+        {
+            combine[i].mesh = meshFilterList[i].sharedMesh;
+            combine[i].transform = this.gameObject.transform.worldToLocalMatrix * meshFilterList[i].transform.localToWorldMatrix;
+        }
+
+        Mesh mesh = new Mesh();
+        mesh.CombineMeshes(combine);
+        meshFilter.sharedMesh = mesh;
+
+        MeshCollider meshCollider = GetComponent<MeshCollider>();
+        if (meshCollider == null)
+            meshCollider = this.gameObject.AddComponent<MeshCollider>();
+
+        meshCollider.sharedMesh = meshFilter.sharedMesh;
+    }
+
     protected virtual void Start()
     {
-        if(m_useRigidbody == true)
+        if (m_enableDivide)
+            CreateCombineMeshCollider();
+
+        if (m_useRigidbody == true)
         {
             m_rb = GetComponent<Rigidbody>();
             if(m_rb == null)
