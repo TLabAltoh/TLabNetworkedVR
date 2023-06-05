@@ -463,9 +463,44 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         base.UpdatePosition();
     }
 
+    public override int Devide()
+    {
+        // •ªŠ„/Œ‹‡ˆ—
+
+        int result = base.Devide();
+
+        if (result < 0)
+            return -1;
+
+        bool active = result == 0 ? true : false;
+
+        // ’Ê’m
+
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)WebRole.guest,
+            action = (int)WebAction.divideGrabber,
+            active = active,
+            transform = new WebObjectInfo
+            {
+                id = this.gameObject.name
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+
+        return result;
+    }
+
+    public void DivideFromOutside(bool active)
+    {
+        base.Devide(active);
+    }
+
     protected override void Start()
     {
         base.Start();
+        TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 
     protected override void Update()
