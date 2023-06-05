@@ -291,6 +291,11 @@ public class TLabVRGrabbable : MonoBehaviour
         meshCollider.sharedMesh = meshFilter.sharedMesh;
     }
 
+    public virtual void ReCreateMeshCollider()
+    {
+        CreateCombineMeshCollider();
+    }
+
     protected virtual void Start()
     {
         if (m_enableDivide)
