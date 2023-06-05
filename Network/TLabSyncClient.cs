@@ -130,29 +130,29 @@ public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
 
-    [Tooltip("Server address. The default server has the port set to 5000")]
+    [Tooltip("サーバーのアドレス，ポート番号は5000を使用")]
     [SerializeField] private string m_serverAddr = "ws://192.168.11.10:5000";
 
-    [Tooltip("Whether this player is a host (only one host can exist in the room)")]
+    [Tooltip("このシーンはホストか")]
     [SerializeField] private bool m_isHost = false;
 
-    [Tooltip("Register world data on the server in advance at runtime")]
+    [Tooltip("実行時，このシーンのワールドデータをサーバに登録するか")]
     [SerializeField] private bool m_regist = false;
 
-    [Tooltip("Hide your avatar from yourself (hands only)")]
+    [Tooltip("自分自身のアバターモデル(同期の有効化のため登録する必要あり)")]
     [Header("Own Avator")]
     [SerializeField] private GameObject m_cameraRig;
     [SerializeField] private GameObject m_rightHand;
     [SerializeField] private GameObject m_leftHand;
     [SerializeField] private Transform m_rootTransform;
 
-    [Tooltip("Other people's avatars that you can see")]
+    [Tooltip("自分から見える相手のアバターモデル")]
     [Header("Guest Avator")]
     [SerializeField] private GameObject m_guestHead;
     [SerializeField] private GameObject m_guestRTouch;
     [SerializeField] private GameObject m_guestLTouch;
 
-    [Tooltip("Transform to responce when joining")]
+    [Tooltip("各プレイヤーのリスポン位置")]
     [Header("Respown Anchor")]
     [SerializeField] private Transform m_hostAnchor;
     [SerializeField] private Transform[] m_guestAnchors;
