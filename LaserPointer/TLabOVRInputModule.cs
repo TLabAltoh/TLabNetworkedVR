@@ -15,6 +15,14 @@ namespace UnityEngine.EventSystems
 
         public OVRCursor m_CursorLeft, m_CursorRight;
 
+        [Tooltip("UI operation with the left hand or not")]
+
+        [SerializeField]
+        private bool m_leftPressing = false;
+
+        [SerializeField]
+        private bool m_rightPressing = false;
+
         [Tooltip("Gamepad button to act as gaze click")]
         public OVRInput.Button joyPadClickButton = OVRInput.Button.One;
 
@@ -473,8 +481,30 @@ namespace UnityEngine.EventSystems
                     SendSubmitEventToSelectedObject();
             }
 
-            ProcessMouseEvent(GetGazePointerData(rayTransformLeft, m_CursorLeft, OVRInput.Controller.LTouch));
-            ProcessMouseEvent(GetGazePointerData(rayTransformRight, m_CursorRight, OVRInput.Controller.RTouch));
+            // Processing required to make scrollbars work as intended
+
+            if (m_rightPressing == false || m_leftPressing == true)
+            {
+                MouseState leftState = GetGazePointerData(rayTransformLeft, m_CursorLeft, OVRInput.Controller.LTouch);
+                ProcessMouseEvent(leftState);
+
+                if (m_leftPressing == true)
+                    m_leftPressing = !leftState.AnyReleasesThisFrame();
+                else
+                    m_leftPressing = leftState.AnyPressesThisFrame();
+            }
+
+            if (m_leftPressing == false || m_rightPressing == true)
+            {
+                MouseState rightState = GetGazePointerData(rayTransformRight, m_CursorRight, OVRInput.Controller.RTouch);
+                ProcessMouseEvent(rightState);
+
+                if (m_rightPressing == true)
+                    m_rightPressing = !rightState.AnyReleasesThisFrame();
+                else
+                    m_rightPressing = rightState.AnyPressesThisFrame();
+            }
+
 #if !UNITY_ANDROID
             ProcessMouseEvent(GetCanvasPointerData());
 #endif
