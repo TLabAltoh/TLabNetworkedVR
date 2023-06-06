@@ -327,6 +327,7 @@ MonoBehaviour:
   m_inputModule: {fileID: 2459684400625350835}
   m_leftHand: {fileID: 0}
   m_rightHand: {fileID: 0}
+  m_useHandTracking: 0
 --- !u!1 &2459684400775635763
 GameObject:
   m_ObjectHideFlags: 0

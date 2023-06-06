@@ -225,6 +225,11 @@ public class TLabVRTrackingHand : MonoBehaviour
             if (Physics.Raycast(m_hand.PointerPose.position, m_hand.PointerPose.forward, out m_raycastHit, m_laserPointer.maxLength, m_layerMask))
             {
                 GameObject target = m_raycastHit.collider.gameObject;
+
+                Animator animator = target.GetComponent<Animator>();
+                if(animator != null)
+                    animator.SetBool("PointerOn", true);
+
                 TLabVRRotatable rotatable = target.GetComponent<TLabVRRotatable>();
 
                 if (rotatable == null)

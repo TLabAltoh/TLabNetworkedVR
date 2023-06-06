@@ -289,6 +289,24 @@ public class TLabVRGrabbable : MonoBehaviour
                 continue;
 
             childs[i].enabled = active;
+
+            if(active == false)
+            {
+                TLabVRRotatable[] rotatebles = this.gameObject.GetComponentsInChildren<TLabVRRotatable>();
+                for(int j = 0; j < rotatebles.Length; j++)
+                {
+                    if (rotatebles[j].gameObject == this.gameObject)
+                        continue;
+
+                    rotatebles[i].SetHandAngulerVelocity(Vector3.zero, 0.0f);
+                }
+            }
+            else
+            {
+                TLabVRRotatable rotateble = this.gameObject.GetComponent<TLabVRRotatable>();
+                if (rotateble != null)
+                    rotateble.SetHandAngulerVelocity(Vector3.zero, 0.0f);
+            }
         }
 
         if (active == false)
