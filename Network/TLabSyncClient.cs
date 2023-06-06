@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using NativeWebSocket;
+
+#region WebSocketUtil
 
 // https://kazupon.org/unity-jsonutility/#i-2
 [System.Serializable]
@@ -55,16 +58,9 @@ public class TLabSyncJson
     public bool active = false;
 
     public WebObjectInfo transform;
-
     public WebAnimInfo animator;
-}
 
-public enum WebAnimValueType
-{
-    typeFloat,
-    typeInt,
-    typeBool,
-    typeTrigger
+    public string custom = "";
 }
 
 public enum WebRole
@@ -85,9 +81,19 @@ public enum WebAction
     setGravity,
     grabbLock,
     forceRelease,
+    divideGrabber,
     syncTransform,
     syncAnim,
-    reflesh
+    reflesh,
+    customAction
+}
+
+public enum WebAnimValueType
+{
+    typeFloat,
+    typeInt,
+    typeBool,
+    typeTrigger
 }
 
 public static class TLabSyncClientConst
@@ -126,6 +132,8 @@ public static class TLabSyncClientConst
     public const string W = "\"w\":";
 }
 
+#endregion WebSocketUtil
+
 public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
@@ -156,6 +164,10 @@ public class TLabSyncClient : MonoBehaviour
     [Header("Respown Anchor")]
     [SerializeField] private Transform m_hostAnchor;
     [SerializeField] private Transform[] m_guestAnchors;
+
+    [Tooltip("カスタムメッセージのコールバック")]
+    [Header("Custom Event")]
+    [SerializeField] private UnityEvent<string> m_customEvent;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
@@ -201,7 +213,7 @@ public class TLabSyncClient : MonoBehaviour
             action = (int)WebAction.reflesh
         };
         string json = JsonUtility.ToJson(obj);
-        TLabSyncClient.Instalce.SendWsMessage(json);
+        SendWsMessage(json);
 
         Debug.Log("tlabsyncclient: " + "force reflesh");
     }
@@ -580,6 +592,18 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
+            else if (obj.action == (int)WebAction.divideGrabber)
+            {
+                WebObjectInfo webTransform = obj.transform;
+                TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
+
+                if (grabbable == null)
+                    return;
+
+                grabbable.DivideFromOutside(obj.active);
+
+                return;
+            }
             else if(obj.action == (int)WebAction.syncAnim)
             {
                 WebAnimInfo webAnimator = obj.animator;
@@ -599,10 +623,11 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
+            else if (obj.action == (int)WebAction.customAction)
+            {
+                m_customEvent.Invoke(obj.custom);
+            }
         };
-
-        // Keep sending messages at every 0.3s
-        // InvokeRepeating("SendWebSocketMessage", 0.0f, 0.3f);
 
         // waiting for messages
         await websocket.Connect();

@@ -237,26 +237,6 @@ public class TLabVRGrabbable : MonoBehaviour
         }
     }
 
-    protected virtual T CheckParentComponent<T>(GameObject obj) where T : Component
-    {
-        var targetComp = obj.GetComponent<T>();
-        if (targetComp == null)
-            targetComp = obj.AddComponent<T>();
-
-        return targetComp;
-    }
-
-    protected virtual void SwitchDevided(bool active)
-    {
-        MeshCollider meshCollider = GetComponent<MeshCollider>();
-        if (meshCollider == null)
-            return;
-
-        meshCollider.enabled = active;
-
-
-    }
-
     protected virtual void CreateCombineMeshCollider()
     {
         // 自分自身のメッシュフィルターを取得
@@ -289,6 +269,45 @@ public class TLabVRGrabbable : MonoBehaviour
             meshCollider = this.gameObject.AddComponent<MeshCollider>();
 
         meshCollider.sharedMesh = meshFilter.sharedMesh;
+    }
+
+    protected virtual void Devide(bool active)
+    {
+        if (m_enableDivide == false)
+            return;
+
+        MeshCollider meshCollider = this.gameObject.GetComponent<MeshCollider>();
+
+        if (meshCollider == null)
+            return;
+
+        meshCollider.enabled = !active;
+        MeshCollider[] childs = this.gameObject.GetComponentsInChildren<MeshCollider>();
+        for (int i = 0; i < childs.Length; i++)
+        {
+            if (childs[i] == meshCollider)
+                continue;
+
+            childs[i].enabled = active;
+        }
+
+        if (active == false)
+            CreateCombineMeshCollider();
+    }
+
+    public virtual int Devide()
+    {
+        if (m_enableDivide == false)
+            return -1;
+
+        MeshCollider meshCollider = this.gameObject.GetComponent<MeshCollider>();
+
+        if (meshCollider == null)
+            return -1;
+
+        Devide(meshCollider.enabled);
+
+        return meshCollider.enabled ? 0 : 1;
     }
 
     public virtual void ReCreateMeshCollider()
