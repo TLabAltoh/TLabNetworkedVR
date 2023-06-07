@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -56,6 +55,14 @@ public class TLabVRGrabbable : MonoBehaviour
         get
         {
             return m_mainParent != null;
+        }
+    }
+
+    public bool EnableDivide
+    {
+        get
+        {
+            return m_enableDivide;
         }
     }
 

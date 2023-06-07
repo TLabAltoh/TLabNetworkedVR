@@ -173,6 +173,8 @@ public class TLabSyncClient : MonoBehaviour
 
     private WebSocket websocket;
     private int m_seatIndex = -1;
+    private bool[] m_guestTable = new bool[SEAT_LENGTH];
+    private const int SEAT_LENGTH = 4;
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -193,6 +195,11 @@ public class TLabSyncClient : MonoBehaviour
         {
             return m_seatIndex;
         }
+    }
+
+    public bool IsGuestExist(int index)
+    {
+        return m_guestTable[index];
     }
 
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
@@ -274,6 +281,8 @@ public class TLabSyncClient : MonoBehaviour
                 {
                     #region
                     m_seatIndex = obj.seatIndex;
+
+                    m_guestTable[obj.seatIndex] = true;
 
                     // Enable sync own avator
 
@@ -359,6 +368,8 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.SetGravity(true);
                         }
                     }
+
+                    m_guestTable[obj.seatIndex] = false;
 
                     Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
@@ -460,6 +471,8 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
                     }
+
+                    m_guestTable[obj.seatIndex] = true;
 
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
@@ -626,6 +639,8 @@ public class TLabSyncClient : MonoBehaviour
             else if (obj.action == (int)WebAction.customAction)
             {
                 m_customEvent.Invoke(obj.custom);
+
+                return;
             }
         };
 
