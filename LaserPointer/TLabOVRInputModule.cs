@@ -483,9 +483,10 @@ namespace UnityEngine.EventSystems
 
             // Processing required to make scrollbars work as intended
 
+            MouseState leftState = GetGazePointerData(rayTransformLeft, m_CursorLeft, OVRInput.Controller.LTouch);
+
             if (m_rightPressing == false || m_leftPressing == true)
             {
-                MouseState leftState = GetGazePointerData(rayTransformLeft, m_CursorLeft, OVRInput.Controller.LTouch);
                 ProcessMouseEvent(leftState);
 
                 if (m_leftPressing == true)
@@ -494,9 +495,10 @@ namespace UnityEngine.EventSystems
                     m_leftPressing = leftState.AnyPressesThisFrame();
             }
 
+            MouseState rightState = GetGazePointerData(rayTransformRight, m_CursorRight, OVRInput.Controller.RTouch);
+
             if (m_leftPressing == false || m_rightPressing == true)
             {
-                MouseState rightState = GetGazePointerData(rayTransformRight, m_CursorRight, OVRInput.Controller.RTouch);
                 ProcessMouseEvent(rightState);
 
                 if (m_rightPressing == true)
