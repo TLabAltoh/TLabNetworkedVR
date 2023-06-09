@@ -219,17 +219,31 @@ public class TLabVRTrackingHand : MonoBehaviour
         }
         else
         {
-            //
-            // Rotate
-            //
-
             if (Physics.Raycast(m_hand.PointerPose.position, m_hand.PointerPose.forward, out m_raycastHit, m_laserPointer.maxLength, m_layerMask))
             {
+
                 GameObject target = m_raycastHit.collider.gameObject;
+
+                //
+                // Outline
+                //
+
+                TLabOutlineSelectable selectable = target.GetComponent<TLabOutlineSelectable>();
+
+                if (selectable != null)
+                    selectable.Selected = true;
+
+                //
+                // PointerOn
+                //
 
                 Animator animator = target.GetComponent<Animator>();
                 if(animator != null)
                     animator.SetBool("PointerOn", true);
+
+                //
+                // Rotate
+                //
 
                 TLabVRRotatable rotatable = target.GetComponent<TLabVRRotatable>();
 
