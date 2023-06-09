@@ -197,6 +197,13 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
+#if UNITY_EDITOR
+    public void SetServerAddr(string addr)
+    {
+        m_serverAddr = addr;
+    }
+#endif
+
     public bool IsGuestExist(int index)
     {
         return m_guestTable[index];
