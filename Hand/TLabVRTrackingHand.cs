@@ -182,7 +182,8 @@ public class TLabVRTrackingHand : MonoBehaviour
 
         m_laserPointer.maxLength = !grip ? m_maxDistance : 0.0f;
 
-        if (Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
+        //if(Physics.Raycast(m_grabbAnchor.position, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
+        if (Physics.SphereCast(m_grabbAnchor.position, 0.025f, m_grabbAnchor.forward, out m_raycastHit, 0.25f, m_layerMask))
         {
             if(m_grabbable != null)
             {
