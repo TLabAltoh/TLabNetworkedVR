@@ -463,6 +463,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         base.UpdatePosition();
     }
 
+    public void OnDevideButtonClick()
+    {
+        Devide();
+    }
+
     public override int Devide()
     {
         // •ªŠ„/Œ‹‡ˆ—
