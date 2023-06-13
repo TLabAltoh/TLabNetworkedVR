@@ -1,23 +1,20 @@
 using System.Text;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 public class TLabSyncGrabbable : TLabVRGrabbable
 {
     [Header("Sync Setting")]
 
-    [Tooltip("Be sure to enable this field for objects you want to synchronize")]
+    [Tooltip("これが有効化されていないとオブジェクトは同期されない")]
     [SerializeField] public bool m_enableSync = false;
 
-    [Tooltip("While this item is enabled, objects will automatically keep their transforms in sync regardless of player interaction.")]
+    [Tooltip("有効化すると毎フレーム自動でオブジェクトを同期する")]
     [SerializeField] public bool m_autoSync = false;
 
-    [Tooltip("Objects with this item disabled cannot be grabbed by any player")]
+    [Tooltip("有効化すると誰からもこのオブジェクトを掴めなくなる")]
     [SerializeField] public bool m_locked = false;
 
-    private bool m_rbAllocated = true;
+    private bool m_rbAllocated = false;
     private int m_grabbed = -1;
 
     private bool m_isSyncFromOutside = false;
@@ -51,7 +48,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-
     public int GrabbedIndex
     {
         get
@@ -76,14 +72,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-
-
-
-
-    /// <summary>
-    /// Synchronize object transforms updated externally
-    /// </summary>
-    /// <param name="transform"></param>
     public void SyncFromOutside(WebObjectInfo transform)
     {
         WebVector3 position = transform.position;
@@ -106,37 +94,18 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = true;
     }
 
-
-
-
-
-    /// <summary>
-    /// Externally enable/disable the Rigidbody's Gravity
-    /// </summary>
-    /// <param name="active"></param>
     public void SetGravity(bool active)
     {
         if (m_rb != null)
             EnableGravity(active);
     }
 
-    /// <summary>
-    /// Determines if this object should calculate gravity
-    /// </summary>
-    /// <param name="active"></param>
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
         SetGravity((m_grabbed == -1 && active) ? true : false);
     }
 
-
-
-
-
-    /// <summary>
-    /// Forcibly sever the parent relationship between the object and itself
-    /// </summary>
     public void ForceReleaseSelf()
     {
         if (m_mainParent != null)
@@ -149,9 +118,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    /// <summary>
-    /// Forcibly sever the parent relationship between the object and itself on external request
-    /// </summary>
     public void ForceReleaseFromOutside()
     {
         if(m_mainParent != null)
@@ -164,15 +130,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    /// <summary>
-    /// Forcibly sever the parent relationship between this object and all players
-    /// </summary>
     public void ForceRelease()
     {
-        // sever parenting with yourself
         ForceReleaseSelf();
 
-        // Requesting other players to sever the parental relationship with the object
         TLabSyncJson obj = new TLabSyncJson
         {
             role = (int)WebRole.guest,
@@ -188,14 +149,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         Debug.Log("tlabvrhand: " + "force release");
     }
 
-
-
-
-
-    /// <summary>
-    /// This object is locked/unlocked by another player
-    /// </summary>
-    /// <param name="index"></param>
     public void GrabbLockFromOutside(int index)
     {
         if (index != -1)
@@ -212,19 +165,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             m_grabbed = -1;
     }
 
-    /// <summary>
-    /// lock/unlock an object from itself
-    /// </summary>
-    /// <param name="index"></param>
     public void GrabbLockSelf(int index)
     {
         m_grabbed = index;
     }
 
-    /// <summary>
-    /// Lock/Unlock this object from other players
-    /// </summary>
-    /// <param name="active"></param>
     public void GrabbLock(bool active)
     {
         TLabSyncJson obj = new TLabSyncJson
@@ -243,16 +188,15 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         Debug.Log("tlabvrhand: " + "grabb lock");
     }
 
-
-
 #if UNITY_EDITOR
     public override void InitializeRotatable()
     {
-        if (EditorApplication.isPlaying == true)
-            return;
-
         base.InitializeRotatable();
-        m_autoSync = false;
+    }
+
+    public override void UseRigidbody(bool rigidbody, bool gravity)
+    {
+        base.UseRigidbody(rigidbody, gravity);
     }
 #endif
 
@@ -265,12 +209,15 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_rbAllocated && m_useGravity)
         {
-            // When I myself was in charge of calculating the gravity of this object
+            // 自分自身がGravityの計算を担当している
             EnableGravity(!grip);
         }
         else if (m_enableSync && m_useRigidbody && m_useGravity)
         {
-            // Requests the player responsible for computing gravity for this object to temporarily stop computing gravity
+            // このオブジェクトのGravityが有効化されている
+            // このオブジェクトの同期が有効化されている
+
+            // このRigidbodyのGravity計算担当に自分が掴むことを通知
             TLabSyncJson obj = new TLabSyncJson
             {
                 role = (int)WebRole.guest,
@@ -300,10 +247,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public override bool AddParent(GameObject parent)
     {
-        if(m_locked == true && m_grabbed != -1)
-        {
+        // 掴むことが有効化されている
+        // 誰も掴んでいない
+
+        if(m_locked == true || m_grabbed != -1)
             return false;
-        }
 
         if (m_mainParent == null)
         {
@@ -375,14 +323,12 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return false;
     }
 
-    /// <summary>
-    /// Synchronize this object's transforms externally
-    /// Optimized using StringBuilder compared to built-in Json generation function
-    /// </summary>
     public void SyncTransform()
     {
         if (m_enableSync == false)
             return;
+
+        #region StringBuilderでパケットの生成の高速化
 
         builder.Clear();
 
@@ -462,8 +408,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         builder.Append("}");
 
         string json = builder.ToString();
+        #endregion
 
-        #region Packet to make
+        #region 作りたいパケット
         //TLabSyncJson obj = new TLabSyncJson
         //{
         //    role = (int)WebRole.guest,
@@ -509,21 +456,56 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     protected override void UpdateScale()
     {
         base.UpdateScale();
-
-        if (m_scaleInitialDistance != -1.0f)
-            SyncTransform();
     }
 
     protected override void UpdatePosition()
     {
         base.UpdatePosition();
+    }
 
-        SyncTransform();
+    public void OnDevideButtonClick()
+    {
+        Devide();
+    }
+
+    public override int Devide()
+    {
+        // 分割/結合処理
+
+        int result = base.Devide();
+
+        if (result < 0)
+            return -1;
+
+        bool active = result == 0 ? true : false;
+
+        // 通知
+
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)WebRole.guest,
+            action = (int)WebAction.divideGrabber,
+            active = active,
+            transform = new WebObjectInfo
+            {
+                id = this.gameObject.name
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+
+        return result;
+    }
+
+    public void DivideFromOutside(bool active)
+    {
+        base.Devide(active);
     }
 
     protected override void Start()
     {
         base.Start();
+        TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 
     protected override void Update()
@@ -537,6 +519,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 m_scaleInitialDistance = -1.0f;
                 UpdatePosition();
             }
+
+            SyncTransform();
         }
         else
         {

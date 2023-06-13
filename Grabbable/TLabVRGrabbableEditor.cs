@@ -1,3 +1,4 @@
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -12,12 +13,23 @@ public class TLabVRGrabbableEditor : Editor
     {
         base.OnInspectorGUI();
 
+        serializedObject.Update();
+
         TLabVRGrabbable grabbable = target as TLabVRGrabbable;
 
         TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
         if (rotatable != null)
-            grabbable.InitializeRotatable();
+        {
+            if (GUILayout.Button("Initialize for Rotatable"))
+            {
+                grabbable.InitializeRotatable();
+                EditorUtility.SetDirty(grabbable);
+                EditorUtility.SetDirty(rotatable);
+            }
+        }
+
+        serializedObject.ApplyModifiedProperties();
     }
 }
 #endif

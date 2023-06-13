@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class TLabSyncRotatable : TLabVRRotatable
 {
-    private TLabSyncGrabbable m_grabbable;
-    private bool m_onShot = false;
+    private TLabSyncGrabbable m_syncGrabbable;
+
 
     protected override bool IsGrabbled
     {
         get
         {
-            return m_grabbable.Grabbed || m_grabbable.GrabbedIndex != -1;
+            return m_syncGrabbable.Grabbed || m_syncGrabbable.GrabbedIndex != -1;
         }
     }
 
@@ -17,7 +17,7 @@ public class TLabSyncRotatable : TLabVRRotatable
     {
         get
         {
-            return m_grabbable.IsSyncFromOutside;
+            return m_syncGrabbable.IsSyncFromOutside;
         }
     }
 
@@ -34,8 +34,8 @@ public class TLabSyncRotatable : TLabVRRotatable
 
     protected override void Start()
     {
-        m_grabbable = GetComponent<TLabSyncGrabbable>();
-        if (m_grabbable == null)
+        m_syncGrabbable = GetComponent<TLabSyncGrabbable>();
+        if (m_syncGrabbable == null)
             Destroy(this);
     }
 
@@ -46,7 +46,7 @@ public class TLabSyncRotatable : TLabVRRotatable
             this.transform.rotation = Quaternion.AngleAxis(m_angle, m_axis) * this.transform.rotation;
             m_angle = Mathf.Clamp(m_angle - 0.1f * Time.deltaTime, 0, float.MaxValue);
 
-            m_grabbable.SyncTransform();
+            m_syncGrabbable.SyncTransform();
         }
         else
             m_angle = 0f;

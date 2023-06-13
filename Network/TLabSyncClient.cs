@@ -1,6 +1,9 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using NativeWebSocket;
+
+#region WebSocketUtil
 
 // https://kazupon.org/unity-jsonutility/#i-2
 [System.Serializable]
@@ -55,16 +58,9 @@ public class TLabSyncJson
     public bool active = false;
 
     public WebObjectInfo transform;
-
     public WebAnimInfo animator;
-}
 
-public enum WebAnimValueType
-{
-    typeFloat,
-    typeInt,
-    typeBool,
-    typeTrigger
+    public string custom = "";
 }
 
 public enum WebRole
@@ -85,8 +81,19 @@ public enum WebAction
     setGravity,
     grabbLock,
     forceRelease,
+    divideGrabber,
     syncTransform,
-    syncAnim
+    syncAnim,
+    reflesh,
+    customAction
+}
+
+public enum WebAnimValueType
+{
+    typeFloat,
+    typeInt,
+    typeBool,
+    typeTrigger
 }
 
 public static class TLabSyncClientConst
@@ -125,41 +132,49 @@ public static class TLabSyncClientConst
     public const string W = "\"w\":";
 }
 
+#endregion WebSocketUtil
+
 public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
 
-    [Tooltip("Server address. The default server has the port set to 5000")]
+    [Tooltip("サーバーのアドレス，ポート番号は5000を使用")]
     [SerializeField] private string m_serverAddr = "ws://192.168.11.10:5000";
 
-    [Tooltip("Whether this player is a host (only one host can exist in the room)")]
+    [Tooltip("このシーンはホストか")]
     [SerializeField] private bool m_isHost = false;
 
-    [Tooltip("Register world data on the server in advance at runtime")]
+    [Tooltip("実行時，このシーンのワールドデータをサーバに登録するか")]
     [SerializeField] private bool m_regist = false;
 
-    [Tooltip("Hide your avatar from yourself (hands only)")]
+    [Tooltip("自分自身のアバターモデル(同期の有効化のため登録する必要あり)")]
     [Header("Own Avator")]
     [SerializeField] private GameObject m_cameraRig;
     [SerializeField] private GameObject m_rightHand;
     [SerializeField] private GameObject m_leftHand;
     [SerializeField] private Transform m_rootTransform;
 
-    [Tooltip("Other people's avatars that you can see")]
+    [Tooltip("自分から見える相手のアバターモデル")]
     [Header("Guest Avator")]
     [SerializeField] private GameObject m_guestHead;
     [SerializeField] private GameObject m_guestRTouch;
     [SerializeField] private GameObject m_guestLTouch;
 
-    [Tooltip("Transform to responce when joining")]
+    [Tooltip("各プレイヤーのリスポン位置")]
     [Header("Respown Anchor")]
     [SerializeField] private Transform m_hostAnchor;
     [SerializeField] private Transform[] m_guestAnchors;
+
+    [Tooltip("カスタムメッセージのコールバック")]
+    [Header("Custom Event")]
+    [SerializeField] private UnityEvent<string> m_customEvent;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
     private WebSocket websocket;
     private int m_seatIndex = -1;
+    private bool[] m_guestTable = new bool[SEAT_LENGTH];
+    private const int SEAT_LENGTH = 4;
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -180,6 +195,41 @@ public class TLabSyncClient : MonoBehaviour
         {
             return m_seatIndex;
         }
+    }
+
+#if UNITY_EDITOR
+    public void SetServerAddr(string addr)
+    {
+        m_serverAddr = addr;
+    }
+#endif
+
+    public bool IsGuestExist(int index)
+    {
+        return m_guestTable[index];
+    }
+
+    public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
+    {
+        m_grabbables[name] = grabbable;
+    }
+
+    public void AddSyncAnimator(string name, Animator animator)
+    {
+        m_animators[name] = animator;
+    }
+
+    public void ForceReflesh()
+    {
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)WebRole.guest,
+            action = (int)WebAction.reflesh
+        };
+        string json = JsonUtility.ToJson(obj);
+        SendWsMessage(json);
+
+        Debug.Log("tlabsyncclient: " + "force reflesh");
     }
 
     async void Start()
@@ -205,11 +255,11 @@ public class TLabSyncClient : MonoBehaviour
                     TLabSyncClientConst.ACTION + ((int)WebAction.regist).ToString() +
                 "}";
 
-            Debug.Log("tlabwebsocket: " + json);
+            Debug.Log("tlabsyncclient: " + json);
 
             SendWsMessage(json);
 
-            Debug.Log("tlabwebsocket: Connection open!");
+            Debug.Log("tlabsyncclient: Connection open!");
         };
 
         websocket.OnError += (e) =>
@@ -219,7 +269,7 @@ public class TLabSyncClient : MonoBehaviour
 
         websocket.OnClose += (e) =>
         {
-            Debug.Log("tlabwebsocket: Connection closed!");
+            Debug.Log("tlabsyncclient: Connection closed!");
         };
 
         websocket.OnMessage += (bytes) =>
@@ -229,7 +279,7 @@ public class TLabSyncClient : MonoBehaviour
             TLabSyncJson obj = JsonUtility.FromJson<TLabSyncJson>(message);
 
 #if UNITY_EDITOR
-            Debug.Log("tlabwebsocket: OnMessage - " + message);
+            Debug.Log("tlabsyncclient: OnMessage - " + message);
 #endif
 
             if(obj.role == (int)WebRole.server)
@@ -238,6 +288,10 @@ public class TLabSyncClient : MonoBehaviour
                 {
                     #region
                     m_seatIndex = obj.seatIndex;
+
+                    m_guestTable[obj.seatIndex] = true;
+
+                    // Enable sync own avator
 
                     if (m_leftHand != null && m_rightHand != null && m_cameraRig != null)
                     {
@@ -258,8 +312,8 @@ public class TLabSyncClient : MonoBehaviour
                         else
                         {
                             Transform anchor = m_guestAnchors[m_seatIndex - 1];
-                            m_rootTransform.position = m_hostAnchor.position;
-                            m_rootTransform.rotation = m_hostAnchor.rotation;
+                            m_rootTransform.position = anchor.position;
+                            m_rootTransform.rotation = anchor.rotation;
                         }
 
                         m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
@@ -322,7 +376,9 @@ public class TLabSyncClient : MonoBehaviour
                         }
                     }
 
-                    Debug.Log("tlabwebsocket: guest disconncted . " + obj.seatIndex.ToString());
+                    m_guestTable[obj.seatIndex] = false;
+
+                    Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
                     return;
 
@@ -370,6 +426,9 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
                         if (vrHandRight != null)
                         {
+                            if (vrHandRight.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
@@ -377,9 +436,12 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
 
-                        TLabVRHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRHand>();
+                        TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandRight != null)
                         {
+                            if (vrTrackingHandRight.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
@@ -393,6 +455,9 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
                         if (vrHandLeft != null)
                         {
+                            if (vrHandLeft.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
@@ -400,9 +465,12 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
 
-                        TLabVRHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRHand>();
+                        TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandLeft != null)
                         {
+                            if (vrTrackingHandLeft.enabled == false)
+                                return;
+
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;
@@ -410,6 +478,8 @@ public class TLabSyncClient : MonoBehaviour
                                 grabbable.GrabbLock(true);
                         }
                     }
+
+                    m_guestTable[obj.seatIndex] = true;
 
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
@@ -419,12 +489,78 @@ public class TLabSyncClient : MonoBehaviour
                 }
                 else if (obj.action == (int)WebAction.allocateGravity)
                 {
+                    #region
                     WebObjectInfo webTransform = obj.transform;
                     TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
                     if (grabbable != null)
                         grabbable.AllocateGravity(obj.active);
 
                     return;
+                    #endregion
+                }
+                else if(obj.action == (int)WebAction.reflesh)
+                {
+                    #region
+                    if (m_rightHand != null)
+                    {
+                        TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
+                        if (vrHandRight != null)
+                        {
+                            if (vrHandRight.enabled == false)
+                                return;
+
+                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
+                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
+                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
+                            if (grabbable != null)
+                                grabbable.GrabbLock(true);
+                        }
+
+                        TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
+                        if (vrTrackingHandRight != null)
+                        {
+                            if (vrTrackingHandRight.enabled == false)
+                                return;
+
+                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
+                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
+                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
+                            if (grabbable != null)
+                                grabbable.GrabbLock(true);
+                        }
+                    }
+
+                    if (m_leftHand != null)
+                    {
+                        TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
+                        if (vrHandLeft != null)
+                        {
+                            if (vrHandLeft.enabled == false)
+                                return;
+
+                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
+                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
+                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
+                            if (grabbable != null)
+                                grabbable.GrabbLock(true);
+                        }
+
+                        TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
+                        if (vrTrackingHandLeft != null)
+                        {
+                            if (vrTrackingHandLeft.enabled == false)
+                                return;
+
+                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
+                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
+                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;
+                            if (grabbable != null)
+                                grabbable.GrabbLock(true);
+                        }
+                    }
+
+                    return;
+                    #endregion
                 }
             }
 
@@ -476,6 +612,18 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
+            else if (obj.action == (int)WebAction.divideGrabber)
+            {
+                WebObjectInfo webTransform = obj.transform;
+                TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
+
+                if (grabbable == null)
+                    return;
+
+                grabbable.DivideFromOutside(obj.active);
+
+                return;
+            }
             else if(obj.action == (int)WebAction.syncAnim)
             {
                 WebAnimInfo webAnimator = obj.animator;
@@ -495,10 +643,13 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-        };
+            else if (obj.action == (int)WebAction.customAction)
+            {
+                m_customEvent.Invoke(obj.custom);
 
-        // Keep sending messages at every 0.3s
-        // InvokeRepeating("SendWebSocketMessage", 0.0f, 0.3f);
+                return;
+            }
+        };
 
         // waiting for messages
         await websocket.Connect();
