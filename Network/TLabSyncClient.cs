@@ -168,6 +168,7 @@ public class TLabSyncClient : MonoBehaviour
     [Tooltip("カスタムメッセージのコールバック")]
     [Header("Custom Event")]
     [SerializeField] private UnityEvent<string> m_customEvent;
+    [SerializeField] private UnityEvent<int> m_onGuestParticipated;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
@@ -219,6 +220,10 @@ public class TLabSyncClient : MonoBehaviour
         m_animators[name] = animator;
     }
 
+    /// <summary>
+    /// Grabberのrigidbodyの再割り当て
+    /// 現在のサーバー上に記録されているTransformを要求
+    /// </summary>
     public void ForceReflesh()
     {
         TLabSyncJson obj = new TLabSyncJson
@@ -481,6 +486,9 @@ public class TLabSyncClient : MonoBehaviour
 
                     m_guestTable[obj.seatIndex] = true;
 
+                    // 参加時のコールバック
+                    m_onGuestParticipated.Invoke(obj.seatIndex);
+
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
                     return;
@@ -632,14 +640,10 @@ public class TLabSyncClient : MonoBehaviour
                 if (animator == null)
                     return;
 
-                if (webAnimator.type == (int)WebAnimValueType.typeFloat)
-                    animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeInt)
-                    animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeBool)
-                    animator.SetBool(webAnimator.parameter, webAnimator.boolVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeTrigger)
-                    animator.SetTrigger(webAnimator.parameter);
+                if (webAnimator.type == (int)WebAnimValueType.typeFloat)　       animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeInt)　    animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeBool)　   animator.SetBool(webAnimator.parameter, webAnimator.boolVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeTrigger)　animator.SetTrigger(webAnimator.parameter);
 
                 return;
             }
