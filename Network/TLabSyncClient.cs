@@ -224,12 +224,13 @@ public class TLabSyncClient : MonoBehaviour
     /// Grabberのrigidbodyの再割り当て
     /// 現在のサーバー上に記録されているTransformを要求
     /// </summary>
-    public void ForceReflesh()
+    public void ForceReflesh(bool reloadWorldData)
     {
         TLabSyncJson obj = new TLabSyncJson
         {
             role = (int)WebRole.guest,
-            action = (int)WebAction.reflesh
+            action = (int)WebAction.reflesh,
+            active = reloadWorldData
         };
         string json = JsonUtility.ToJson(obj);
         SendWsMessage(json);
@@ -376,8 +377,7 @@ public class TLabSyncClient : MonoBehaviour
                         if(grabbable.GrabbedIndex == obj.seatIndex)
                         {
                             grabbable.GrabbLockSelf(-1);
-                            if (grabbable.RbAllocated)
-                                grabbable.SetGravity(true);
+                            if (grabbable.RbAllocated) grabbable.SetGravity(true);
                         }
                     }
 
@@ -431,27 +431,23 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
                         if (vrHandRight != null)
                         {
-                            if (vrHandRight.enabled == false)
-                                return;
+                            if (vrHandRight.enabled == false) return;
 
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
+                            if (grabbable != null) grabbable.GrabbLock(true);
                         }
 
                         TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandRight != null)
                         {
-                            if (vrTrackingHandRight.enabled == false)
-                                return;
+                            if (vrTrackingHandRight.enabled == false) return;
 
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
+                            if (grabbable != null) grabbable.GrabbLock(true);
                         }
                     }
 
@@ -460,27 +456,23 @@ public class TLabSyncClient : MonoBehaviour
                         TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
                         if (vrHandLeft != null)
                         {
-                            if (vrHandLeft.enabled == false)
-                                return;
+                            if (vrHandLeft.enabled == false) return;
 
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
+                            if (grabbable != null) grabbable.GrabbLock(true);
                         }
 
                         TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
                         if (vrTrackingHandLeft != null)
                         {
-                            if (vrTrackingHandLeft.enabled == false)
-                                return;
+                            if (vrTrackingHandLeft.enabled == false) return;
 
                             // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
                             // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
                             TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
+                            if (grabbable != null) grabbable.GrabbLock(true);
                         }
                     }
 
@@ -500,8 +492,7 @@ public class TLabSyncClient : MonoBehaviour
                     #region
                     WebObjectInfo webTransform = obj.transform;
                     TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
-                    if (grabbable != null)
-                        grabbable.AllocateGravity(obj.active);
+                    if (grabbable != null) grabbable.AllocateGravity(obj.active);
 
                     return;
                     #endregion
@@ -577,8 +568,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
-                if (grabbable == null)
-                    return;
+                if (grabbable == null) return;
 
                 grabbable.SyncFromOutside(webTransform);
 
@@ -589,8 +579,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
-                if (grabbable == null)
-                    return;
+                if (grabbable == null) return;
 
                 grabbable.SetGravity(obj.active);
 
@@ -601,8 +590,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
-                if (grabbable == null)
-                    return;
+                if (grabbable == null) return;
 
                 grabbable.GrabbLockFromOutside(obj.seatIndex);
 
@@ -613,8 +601,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
-                if (grabbable == null)
-                    return;
+                if (grabbable == null) return;
 
                 grabbable.ForceReleaseFromOutside();
 
@@ -625,8 +612,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
-                if (grabbable == null)
-                    return;
+                if (grabbable == null) return;
 
                 grabbable.DivideFromOutside(obj.active);
 
@@ -637,8 +623,7 @@ public class TLabSyncClient : MonoBehaviour
                 WebAnimInfo webAnimator = obj.animator;
                 Animator animator = m_animators[webAnimator.id] as Animator;
 
-                if (animator == null)
-                    return;
+                if (animator == null) return;
 
                 if (webAnimator.type == (int)WebAnimValueType.typeFloat)　       animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
                 else if (webAnimator.type == (int)WebAnimValueType.typeInt)　    animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
