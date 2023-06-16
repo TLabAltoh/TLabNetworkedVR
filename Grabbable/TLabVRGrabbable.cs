@@ -102,8 +102,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected virtual void RbGripSwitch(bool grip)
     {
-        if (m_useGravity == true)
-            EnableGravity(!grip);
+        if (m_useGravity == true) EnableGravity(!grip);
     }
 
     protected virtual void MainParentGrabbStart()
@@ -268,6 +267,7 @@ public class TLabVRGrabbable : MonoBehaviour
         }
 
         Mesh mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.CombineMeshes(combine);
         meshFilter.sharedMesh = mesh;
 
