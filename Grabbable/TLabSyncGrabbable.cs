@@ -479,7 +479,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         bool active = result == 0 ? true : false;
 
-        // 通知
+        // 結合/分割を切り替えたので，誰もこのオブジェクトを掴んでいない状態にする
+
+        TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
+        foreach (TLabSyncGrabbable grabbable in grabbables)
+            grabbable.ForceRelease();
+
+        // オブジェクトの分割を通知
 
         TLabSyncJson obj = new TLabSyncJson
         {
