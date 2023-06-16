@@ -330,9 +330,11 @@ public class TLabVRGrabbable : MonoBehaviour
         if (meshCollider == null)
             return -1;
 
-        Devide(meshCollider.enabled);
+        bool current = meshCollider.enabled;
 
-        return meshCollider.enabled ? 0 : 1;
+        Devide(current);
+
+        return current ? 0 : 1;
     }
 
     public virtual void ReCreateMeshCollider()
