@@ -75,7 +75,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public void SyncFromOutside(WebObjectInfo transform)
     {
         WebVector3 position = transform.position;
-        WebVector3 scale = transform.scale;
+        WebVector3 scale    = transform.scale;
         WebVector4 rotation = transform.rotation;
 
         this.transform.localScale = new Vector3(scale.x, scale.y, scale.z);
@@ -109,9 +109,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_mainParent != null)
         {
-            m_mainParent = null;
-            m_subParent = null;
-            m_grabbed = -1;
+            m_mainParent    = null;
+            m_subParent     = null;
+            m_grabbed       = -1;
 
             RbGripSwitch(false);
         }
@@ -121,9 +121,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if(m_mainParent != null)
         {
-            m_mainParent = null;
-            m_subParent = null;
-            m_grabbed = -1;
+            m_mainParent    = null;
+            m_subParent     = null;
+            m_grabbed       = -1;
 
             RbGripSwitch(false);
         }
@@ -135,9 +135,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role = (int)WebRole.guest,
-            action = (int)WebAction.forceRelease,
-            transform = new WebObjectInfo
+            role        = (int)WebRole.guest,
+            action      = (int)WebAction.forceRelease,
+            transform   = new WebObjectInfo
             {
                 id = this.gameObject.name
             }
@@ -154,8 +154,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             if (m_mainParent != null)
             {
-                m_mainParent = null;
-                m_subParent = null;
+                m_mainParent    = null;
+                m_subParent     = null;
             }
 
             m_grabbed = index;
@@ -173,10 +173,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         TLabSyncJson obj = new TLabSyncJson
         {
-            role = (int)WebRole.guest,
-            action = (int)WebAction.grabbLock,
-            seatIndex = active ? TLabSyncClient.Instalce.SeatIndex : -1,
-            transform = new WebObjectInfo
+            role        = (int)WebRole.guest,
+            action      = (int)WebAction.grabbLock,
+            seatIndex   = active ? TLabSyncClient.Instalce.SeatIndex : -1,
+            transform   = new WebObjectInfo
             {
                 id = this.gameObject.name
             }
@@ -219,10 +219,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             // このRigidbodyのGravity計算担当に自分が掴むことを通知
             TLabSyncJson obj = new TLabSyncJson
             {
-                role = (int)WebRole.guest,
-                action = (int)WebAction.setGravity,
-                active = !grip,
-                transform = new WebObjectInfo
+                role        = (int)WebRole.guest,
+                action      = (int)WebAction.setGravity,
+                active      = !grip,
+                transform   = new WebObjectInfo
                 {
                     id = this.gameObject.name
                 }
@@ -249,8 +249,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         // 掴むことが有効化されている
         // 誰も掴んでいない
 
-        if(m_locked == true || m_grabbed != -1)
-            return false;
+        if(m_locked == true || m_grabbed != -1) return false;
 
         if (m_mainParent == null)
         {
@@ -286,8 +285,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             if (m_subParent != null)
             {
-                m_mainParent = m_subParent;
-                m_subParent = null;
+                m_mainParent    = m_subParent;
+                m_subParent     = null;
 
                 MainParentGrabbStart();
 
@@ -324,8 +323,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public void SyncTransform()
     {
-        if (m_enableSync == false)
-            return;
+        if (m_enableSync == false) return;
 
         #region StringBuilderでパケットの生成の高速化
 
@@ -462,6 +460,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         base.UpdatePosition();
     }
 
+    #region Devide
+
     public void OnDevideButtonClick()
     {
         Devide();
@@ -473,25 +473,23 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         int result = base.Devide();
 
-        if (result < 0)
-            return -1;
+        if (result < 0) return -1;
 
         bool active = result == 0 ? true : false;
 
         // 結合/分割を切り替えたので，誰もこのオブジェクトを掴んでいない状態にする
 
         TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
-        foreach (TLabSyncGrabbable grabbable in grabbables)
-            grabbable.ForceRelease();
+        foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.ForceRelease();
 
         // オブジェクトの分割を通知
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role = (int)WebRole.guest,
-            action = (int)WebAction.divideGrabber,
-            active = active,
-            transform = new WebObjectInfo
+            role        = (int)WebRole.guest,
+            action      = (int)WebAction.divideGrabber,
+            active      = active,
+            transform   = new WebObjectInfo
             {
                 id = this.gameObject.name
             }
@@ -506,6 +504,18 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         base.Devide(active);
     }
+
+    public override void GetInitialChildTransform()
+    {
+        base.GetInitialChildTransform();
+    }
+
+    public override void SetInitialChildTransform()
+    {
+        base.SetInitialChildTransform();
+    }
+
+    #endregion Devide
 
     protected override void Start()
     {
@@ -531,8 +541,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             m_scaleInitialDistance = -1.0f;
 
-            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync))
-                SyncTransform();
+            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncTransform();
         }
     }
 }
