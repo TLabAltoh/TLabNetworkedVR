@@ -4,6 +4,44 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+public class TLabCashTransform
+{
+    public Vector3 Posiiton
+    {
+        get
+        {
+            return position;
+        }
+    }
+
+    public Vector3 LocalScale
+    {
+        get
+        {
+            return localScale;
+        }
+    }
+
+    public Quaternion Rotation
+    {
+        get
+        {
+            return rotation;
+        }
+    }
+
+    public TLabCashTransform(Vector3 position, Vector3 localScale, Quaternion rotation)
+    {
+        this.position = position;
+        this.rotation = rotation;
+        this.localScale = localScale;
+    }
+
+    private Vector3 position;
+    private Vector3 localScale;
+    private Quaternion rotation;
+}
+
 public class TLabVRGrabbable : MonoBehaviour
 {
     public const int PARENT_LENGTH = 2;
@@ -50,6 +88,8 @@ public class TLabVRGrabbable : MonoBehaviour
     protected float m_scalingFactorInvert;
     protected Vector3 m_scaleInitial;
 
+    protected List<TLabCashTransform> m_cashTransforms;
+
     public bool Grabbed
     {
         get
@@ -69,19 +109,17 @@ public class TLabVRGrabbable : MonoBehaviour
 #if UNITY_EDITOR
     public virtual void InitializeRotatable()
     {
-        if (EditorApplication.isPlaying == true)
-            return;
+        if (EditorApplication.isPlaying == true) return;
 
         m_useGravity = false;
     }
 
     public virtual void UseRigidbody(bool rigidbody, bool gravity)
     {
-        if (EditorApplication.isPlaying == true)
-            return;
+        if (EditorApplication.isPlaying == true) return;
 
-        m_useRigidbody = rigidbody;
-        m_useGravity = gravity;
+        m_useRigidbody  = rigidbody;
+        m_useGravity    = gravity;
     }
 #endif
 
@@ -89,14 +127,14 @@ public class TLabVRGrabbable : MonoBehaviour
     {
         if (active == true)
         {
-            m_rb.isKinematic = false;
-            m_rb.useGravity = true;
+            m_rb.isKinematic    = false;
+            m_rb.useGravity     = true;
         }
         else
         {
-            m_rb.isKinematic = true;
-            m_rb.useGravity = false;
-            m_rb.interpolation = RigidbodyInterpolation.Interpolate;
+            m_rb.isKinematic    = true;
+            m_rb.useGravity     = false;
+            m_rb.interpolation  = RigidbodyInterpolation.Interpolate;
         }
     }
 
@@ -107,10 +145,9 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected virtual void MainParentGrabbStart()
     {
-        m_mainPositionOffset = m_mainParent.transform.InverseTransformPoint(this.transform.position);
-
-        m_mainQuaternionStart = m_mainParent.transform.rotation;
-        m_thisQuaternionStart = this.transform.rotation;
+        m_mainPositionOffset    = m_mainParent.transform.InverseTransformPoint(this.transform.position);
+        m_mainQuaternionStart   = m_mainParent.transform.rotation;
+        m_thisQuaternionStart   = this.transform.rotation;
     }
 
     protected virtual void SubParentGrabStart()
@@ -187,26 +224,25 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected virtual void UpdateScale()
     {
-        Vector3 positionMain = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
-        Vector3 positionSub = m_subParent.transform.TransformPoint(m_subPositionOffset);
+        Vector3 positionMain    = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
+        Vector3 positionSub     = m_subParent.transform.TransformPoint(m_subPositionOffset);
 
         // この処理の最初の実行時，必ずpositionMainとpositionSubは同じ座標になる
         // 拡縮の基準が小さくなりすぎてしまい，不都合
         // ---> 手の位置に座標を補間して，2つの座標を意図的にずらす
 
         Vector3 scalingPositionMain = m_mainParent.transform.position * m_scalingFactorInvert + positionMain * m_scalingFactor;
-        Vector3 scalingPositionSub = m_subParent.transform.position * m_scalingFactorInvert + positionSub * m_scalingFactor;
+        Vector3 scalingPositionSub  = m_subParent.transform.position * m_scalingFactorInvert + positionSub * m_scalingFactor;
 
         if (m_scaleInitialDistance == -1.0f)
         {
-            m_scaleInitialDistance = (scalingPositionMain - scalingPositionSub).magnitude;
-            m_scaleInitial = this.transform.localScale;
+            m_scaleInitialDistance  = (scalingPositionMain - scalingPositionSub).magnitude;
+            m_scaleInitial          = this.transform.localScale;
         }
         else
         {
-            float scaleRatio = (scalingPositionMain - scalingPositionSub).magnitude / m_scaleInitialDistance;
-
-            this.transform.localScale = scaleRatio * m_scaleInitial;
+            float scaleRatio            = (scalingPositionMain - scalingPositionSub).magnitude / m_scaleInitialDistance;
+            this.transform.localScale   = scaleRatio * m_scaleInitial;
 
             if (m_useRigidbody == true)
                 m_rb.MovePosition(positionMain * 0.5f + positionSub * 0.5f);
@@ -219,8 +255,7 @@ public class TLabVRGrabbable : MonoBehaviour
     {
         if (m_useRigidbody)
         {
-            if (m_positionFixed)
-                m_rb.MovePosition(m_mainParent.transform.TransformPoint(m_mainPositionOffset));
+            if (m_positionFixed) m_rb.MovePosition(m_mainParent.transform.TransformPoint(m_mainPositionOffset));
 
             if (m_rotateFixed)
             {
@@ -231,8 +266,7 @@ public class TLabVRGrabbable : MonoBehaviour
         }
         else
         {
-            if (m_positionFixed)
-                this.transform.position = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
+            if (m_positionFixed) this.transform.position = m_mainParent.transform.TransformPoint(m_mainPositionOffset);
 
             if (m_rotateFixed)
             {
@@ -243,27 +277,27 @@ public class TLabVRGrabbable : MonoBehaviour
         }
     }
 
+    #region Devide
+
     protected virtual void CreateCombineMeshCollider()
     {
         // 自分自身のメッシュフィルターを取得
         MeshFilter meshFilter = this.gameObject.GetComponent<MeshFilter>();
-        if (meshFilter == null)
-            meshFilter = this.gameObject.AddComponent<MeshFilter>();
+        if (meshFilter == null) meshFilter = this.gameObject.AddComponent<MeshFilter>();
 
         // 子オブジェクトからメッシュフィルターを取得
         MeshFilter[] meshFilters = this.gameObject.GetComponentsInChildren<MeshFilter>();
 
         //
         List<MeshFilter> meshFilterList = new List<MeshFilter>();
-        for (int i = 1; i < meshFilters.Length; i++)
-            meshFilterList.Add(meshFilters[i]);
+        for (int i = 1; i < meshFilters.Length; i++) meshFilterList.Add(meshFilters[i]);
 
         CombineInstance[] combine = new CombineInstance[meshFilterList.Count];
 
         for (int i = 0; i < meshFilterList.Count; i++)
         {
-            combine[i].mesh = meshFilterList[i].sharedMesh;
-            combine[i].transform = this.gameObject.transform.worldToLocalMatrix * meshFilterList[i].transform.localToWorldMatrix;
+            combine[i].mesh         = meshFilterList[i].sharedMesh;
+            combine[i].transform    = this.gameObject.transform.worldToLocalMatrix * meshFilterList[i].transform.localToWorldMatrix;
         }
 
         Mesh mesh = new Mesh();
@@ -272,28 +306,24 @@ public class TLabVRGrabbable : MonoBehaviour
         meshFilter.sharedMesh = mesh;
 
         MeshCollider meshCollider = GetComponent<MeshCollider>();
-        if (meshCollider == null)
-            meshCollider = this.gameObject.AddComponent<MeshCollider>();
+        if (meshCollider == null) meshCollider = this.gameObject.AddComponent<MeshCollider>();
 
         meshCollider.sharedMesh = meshFilter.sharedMesh;
     }
 
     protected virtual void Devide(bool active)
     {
-        if (m_enableDivide == false)
-            return;
+        if (m_enableDivide == false) return;
 
         MeshCollider meshCollider = this.gameObject.GetComponent<MeshCollider>();
 
-        if (meshCollider == null)
-            return;
+        if (meshCollider == null) return;
 
         meshCollider.enabled = !active;
         MeshCollider[] childs = this.gameObject.GetComponentsInChildren<MeshCollider>();
         for (int i = 0; i < childs.Length; i++)
         {
-            if (childs[i] == meshCollider)
-                continue;
+            if (childs[i] == meshCollider) continue;
 
             childs[i].enabled = active;
 
@@ -302,8 +332,7 @@ public class TLabVRGrabbable : MonoBehaviour
                 TLabVRRotatable[] rotatebles = this.gameObject.GetComponentsInChildren<TLabVRRotatable>();
                 for(int j = 0; j < rotatebles.Length; j++)
                 {
-                    if (rotatebles[j].gameObject == this.gameObject)
-                        continue;
+                    if (rotatebles[j].gameObject == this.gameObject) continue;
 
                     rotatebles[i].SetHandAngulerVelocity(Vector3.zero, 0.0f);
                 }
@@ -311,13 +340,11 @@ public class TLabVRGrabbable : MonoBehaviour
             else
             {
                 TLabVRRotatable rotateble = this.gameObject.GetComponent<TLabVRRotatable>();
-                if (rotateble != null)
-                    rotateble.SetHandAngulerVelocity(Vector3.zero, 0.0f);
+                if (rotateble != null) rotateble.SetHandAngulerVelocity(Vector3.zero, 0.0f);
             }
         }
 
-        if (active == false)
-            CreateCombineMeshCollider();
+        if (active == false) CreateCombineMeshCollider();
     }
 
     public virtual int Devide()
@@ -342,16 +369,51 @@ public class TLabVRGrabbable : MonoBehaviour
         CreateCombineMeshCollider();
     }
 
+    public virtual void GetInitialChildTransform()
+    {
+        m_cashTransforms.Clear();
+        Transform[] childTransforms = this.gameObject.GetComponentsInChildren<Transform>();
+        foreach(Transform childTransform in childTransforms)
+        {
+            if (childTransform == this.transform) continue;
+
+            m_cashTransforms.Add(new TLabCashTransform(childTransform.position, childTransform.localScale, childTransform.rotation));
+        }
+    }
+
+    public virtual void SetInitialChildTransform()
+    {
+        if (m_enableDivide == false) return;
+
+        int index = 0;
+
+        Transform[] childTransforms = this.gameObject.GetComponentsInChildren<Transform>();
+        foreach (Transform childTransform in childTransforms)
+        {
+            if (childTransform == this.transform) continue;
+
+            TLabCashTransform cashTransform = m_cashTransforms[index++];
+
+            childTransform.position = cashTransform.Posiiton;
+            childTransform.rotation = cashTransform.Rotation;
+            childTransform.localScale = cashTransform.LocalScale;
+        }
+    }
+
+    #endregion Devide
+
     protected virtual void Start()
     {
         if (m_enableDivide)
+        {
+            GetInitialChildTransform();
             CreateCombineMeshCollider();
+        }
 
         if (m_useRigidbody == true)
         {
             m_rb = GetComponent<Rigidbody>();
-            if(m_rb == null)
-                m_rb = this.gameObject.AddComponent<Rigidbody>();
+            if(m_rb == null) m_rb = this.gameObject.AddComponent<Rigidbody>();
 
             EnableGravity(m_useGravity);
         }

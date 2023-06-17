@@ -60,6 +60,7 @@ public class TLabSyncJson
     public WebObjectInfo transform;
     public WebAnimInfo animator;
 
+    public int customIndex = -1;
     public string custom = "";
 }
 
@@ -134,6 +135,29 @@ public static class TLabSyncClientConst
 
 #endregion WebSocketUtil
 
+[System.Serializable]
+public class TLabSyncClientCustomCallback
+{
+    public void OnMessage(string message)
+    {
+        if(onMessage != null) onMessage.Invoke(message);
+    }
+
+    public void OnGuestParticipated(int seatIndex)
+    {
+        if(onGuestParticipated != null) onGuestParticipated.Invoke(seatIndex);
+    }
+
+    public void OnGuestDisconnected(int seatIndex)
+    {
+        if(onGuestDisconnected != null) onGuestDisconnected.Invoke(seatIndex);
+    }
+
+    [SerializeField] private UnityEvent<string> onMessage;
+    [SerializeField] private UnityEvent<int> onGuestParticipated;
+    [SerializeField] private UnityEvent<int> onGuestDisconnected;
+}
+
 public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
@@ -167,18 +191,17 @@ public class TLabSyncClient : MonoBehaviour
 
     [Tooltip("カスタムメッセージのコールバック")]
     [Header("Custom Event")]
-    [SerializeField] private UnityEvent<string> m_customEvent;
-    [SerializeField] private UnityEvent<int> m_onGuestParticipated;
+    [SerializeField] private TLabSyncClientCustomCallback[] m_customCallbacks;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
     private WebSocket websocket;
-    private int m_seatIndex = -1;
-    private bool[] m_guestTable = new bool[SEAT_LENGTH];
-    private const int SEAT_LENGTH = 4;
+    private int m_seatIndex         = -1;
+    private bool[] m_guestTable     = new bool[SEAT_LENGTH];
+    private const int SEAT_LENGTH   = 4;
 
-    private Hashtable m_grabbables = new Hashtable();
-    private Hashtable m_animators = new Hashtable();
+    private Hashtable m_grabbables  = new Hashtable();
+    private Hashtable m_animators   = new Hashtable();
 
     private const string prefabName = "OVRGuestAnchor.";
 
@@ -221,16 +244,17 @@ public class TLabSyncClient : MonoBehaviour
     }
 
     /// <summary>
-    /// Grabberのrigidbodyの再割り当て
-    /// 現在のサーバー上に記録されているTransformを要求
+    /// - Grabberのrigidbodyの再割り当て
+    /// - 現在のサーバー上に記録されているTransformを要求
     /// </summary>
+    /// <param name="reloadWorldData">サーバー上のTransformを要求するか</param>
     public void ForceReflesh(bool reloadWorldData)
     {
         TLabSyncJson obj = new TLabSyncJson
         {
-            role = (int)WebRole.guest,
-            action = (int)WebAction.reflesh,
-            active = reloadWorldData
+            role    = (int)WebRole.guest,
+            action  = (int)WebAction.reflesh,
+            active  = reloadWorldData
         };
         string json = JsonUtility.ToJson(obj);
         SendWsMessage(json);
@@ -250,8 +274,7 @@ public class TLabSyncClient : MonoBehaviour
                 foreach (TLabSyncGrabbable grabbable in grabbables)
                 {
                     GameObject go = grabbable.gameObject;
-                    if(go != m_leftHand && go != m_rightHand && go != m_cameraRig)
-                        grabbable.SyncTransform();
+                    if(go != m_leftHand && go != m_rightHand && go != m_cameraRig) grabbable.SyncTransform();
                 }
             }
 
@@ -349,9 +372,9 @@ public class TLabSyncClient : MonoBehaviour
 
                     string guestName = prefabName + obj.seatIndex.ToString();
 
-                    GameObject guestRTouch = GameObject.Find(guestName + ".RTouch");
-                    GameObject guestLTouch = GameObject.Find(guestName + ".LTouch");
-                    GameObject guestHead = GameObject.Find(guestName + ".Head");
+                    GameObject guestRTouch  = GameObject.Find(guestName + ".RTouch");
+                    GameObject guestLTouch  = GameObject.Find(guestName + ".LTouch");
+                    GameObject guestHead    = GameObject.Find(guestName + ".Head");
 
                     if(guestRTouch != null)
                     {
@@ -383,6 +406,8 @@ public class TLabSyncClient : MonoBehaviour
 
                     m_guestTable[obj.seatIndex] = false;
 
+                    m_customCallbacks[obj.customIndex].OnGuestDisconnected(obj.seatIndex);
+
                     Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
                     return;
@@ -393,8 +418,8 @@ public class TLabSyncClient : MonoBehaviour
                 {
                     #region
 
-                    Vector3 respownPos = new Vector3(0.0f, -0.5f, 0.0f);
-                    Quaternion respownRot = Quaternion.identity;
+                    Vector3 respownPos      = new Vector3(0.0f, -0.5f, 0.0f);
+                    Quaternion respownRot   = Quaternion.identity;
 
                     string guestName = prefabName + obj.seatIndex.ToString();
 
@@ -402,24 +427,24 @@ public class TLabSyncClient : MonoBehaviour
 
                     if (m_guestRTouch != null)
                     {
-                        GameObject guestRTouch = Instantiate(m_guestRTouch, respownPos, respownRot);
-                        guestRTouch.name = guestName + ".RTouch";
+                        GameObject guestRTouch  = Instantiate(m_guestRTouch, respownPos, respownRot);
+                        guestRTouch.name        = guestName + ".RTouch";
 
                         m_grabbables[guestRTouch.name] = guestRTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
                     if(m_guestLTouch != null)
                     {
-                        GameObject guestLTouch = Instantiate(m_guestLTouch, respownPos, respownRot);
-                        guestLTouch.name = guestName + ".LTouch";
+                        GameObject guestLTouch  = Instantiate(m_guestLTouch, respownPos, respownRot);
+                        guestLTouch.name        = guestName + ".LTouch";
 
                         m_grabbables[guestLTouch.name] = guestLTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
                     if(m_guestHead != null)
                     {
-                        GameObject guestHead = Instantiate(m_guestHead, respownPos, respownRot);
-                        guestHead.name = guestName + ".Head";
+                        GameObject guestHead    = Instantiate(m_guestHead, respownPos, respownRot);
+                        guestHead.name          = guestName + ".Head";
 
                         m_grabbables[guestHead.name] = guestHead.GetComponent<TLabSyncGrabbable>();
                     }
@@ -479,7 +504,7 @@ public class TLabSyncClient : MonoBehaviour
                     m_guestTable[obj.seatIndex] = true;
 
                     // 参加時のコールバック
-                    m_onGuestParticipated.Invoke(obj.seatIndex);
+                    m_customCallbacks[obj.customIndex].OnGuestParticipated(obj.seatIndex);
 
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
@@ -634,7 +659,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.customAction)
             {
-                m_customEvent.Invoke(obj.custom);
+                m_customCallbacks[obj.customIndex].OnMessage(obj.custom);
 
                 return;
             }
@@ -646,8 +671,7 @@ public class TLabSyncClient : MonoBehaviour
 
     public async void SendWsMessage(string json)
     {
-        if (websocket.State == WebSocketState.Open)
-            await websocket.SendText(json);
+        if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
     }
 
     void Awake()
