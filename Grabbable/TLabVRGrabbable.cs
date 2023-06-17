@@ -32,8 +32,8 @@ public class TLabCashTransform
 
     public TLabCashTransform(Vector3 position, Vector3 localScale, Quaternion rotation)
     {
-        this.position = position;
-        this.rotation = rotation;
+        this.position   = position;
+        this.rotation   = rotation;
         this.localScale = localScale;
     }
 
@@ -349,13 +349,11 @@ public class TLabVRGrabbable : MonoBehaviour
 
     public virtual int Devide()
     {
-        if (m_enableDivide == false)
-            return -1;
+        if (m_enableDivide == false) return -1;
 
         MeshCollider meshCollider = this.gameObject.GetComponent<MeshCollider>();
 
-        if (meshCollider == null)
-            return -1;
+        if (meshCollider == null) return -1;
 
         bool current = meshCollider.enabled;
 
@@ -394,9 +392,9 @@ public class TLabVRGrabbable : MonoBehaviour
 
             TLabCashTransform cashTransform = m_cashTransforms[index++];
 
-            childTransform.position = cashTransform.Posiiton;
-            childTransform.rotation = cashTransform.Rotation;
-            childTransform.localScale = cashTransform.LocalScale;
+            childTransform.position     = cashTransform.Posiiton;
+            childTransform.rotation     = cashTransform.Rotation;
+            childTransform.localScale   = cashTransform.LocalScale;
         }
     }
 
@@ -404,7 +402,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected virtual void Start()
     {
-        if (m_enableDivide)
+        if (m_enableDivide == true)
         {
             GetInitialChildTransform();
             CreateCombineMeshCollider();

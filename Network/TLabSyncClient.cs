@@ -406,7 +406,7 @@ public class TLabSyncClient : MonoBehaviour
 
                     m_guestTable[obj.seatIndex] = false;
 
-                    m_customCallbacks[obj.customIndex].OnGuestDisconnected(obj.seatIndex);
+                    foreach(TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestDisconnected(obj.seatIndex);
 
                     Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
@@ -504,7 +504,7 @@ public class TLabSyncClient : MonoBehaviour
                     m_guestTable[obj.seatIndex] = true;
 
                     // 参加時のコールバック
-                    m_customCallbacks[obj.customIndex].OnGuestParticipated(obj.seatIndex);
+                    foreach (TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestParticipated(obj.seatIndex);
 
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
