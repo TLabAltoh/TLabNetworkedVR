@@ -150,6 +150,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public void GrabbLockFromOutside(int index)
     {
+        if (TLabSyncClient.Instalce.SeatIndex == index) return;
+
         if (index != -1)
         {
             if (m_mainParent != null)
@@ -543,5 +545,10 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
             if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncTransform();
         }
+    }
+
+    private void OnDestroy()
+    {
+        GrabbLock(false);
     }
 }

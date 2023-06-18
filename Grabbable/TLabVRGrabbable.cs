@@ -6,11 +6,11 @@ using UnityEditor;
 
 public class TLabCashTransform
 {
-    public Vector3 Posiiton
+    public Vector3 LocalPosiiton
     {
         get
         {
-            return position;
+            return localPosition;
         }
     }
 
@@ -22,24 +22,24 @@ public class TLabCashTransform
         }
     }
 
-    public Quaternion Rotation
+    public Quaternion LocalRotation
     {
         get
         {
-            return rotation;
+            return localRotation;
         }
     }
 
-    public TLabCashTransform(Vector3 position, Vector3 localScale, Quaternion rotation)
+    public TLabCashTransform(Vector3 localPosition, Vector3 localScale, Quaternion localRotation)
     {
-        this.position   = position;
-        this.rotation   = rotation;
-        this.localScale = localScale;
+        this.localPosition  = localPosition;
+        this.localRotation  = localRotation;
+        this.localScale     = localScale;
     }
 
-    private Vector3 position;
+    private Vector3 localPosition;
     private Vector3 localScale;
-    private Quaternion rotation;
+    private Quaternion localRotation;
 }
 
 public class TLabVRGrabbable : MonoBehaviour
@@ -88,7 +88,7 @@ public class TLabVRGrabbable : MonoBehaviour
     protected float m_scalingFactorInvert;
     protected Vector3 m_scaleInitial;
 
-    protected List<TLabCashTransform> m_cashTransforms;
+    protected List<TLabCashTransform> m_cashTransforms = new List<TLabCashTransform>();
 
     public bool Grabbed
     {
@@ -375,7 +375,7 @@ public class TLabVRGrabbable : MonoBehaviour
         {
             if (childTransform == this.transform) continue;
 
-            m_cashTransforms.Add(new TLabCashTransform(childTransform.position, childTransform.localScale, childTransform.rotation));
+            m_cashTransforms.Add(new TLabCashTransform(childTransform.localPosition, childTransform.localScale, childTransform.localRotation));
         }
     }
 
@@ -392,9 +392,9 @@ public class TLabVRGrabbable : MonoBehaviour
 
             TLabCashTransform cashTransform = m_cashTransforms[index++];
 
-            childTransform.position     = cashTransform.Posiiton;
-            childTransform.rotation     = cashTransform.Rotation;
-            childTransform.localScale   = cashTransform.LocalScale;
+            childTransform.localPosition    = cashTransform.LocalPosiiton;
+            childTransform.localRotation    = cashTransform.LocalRotation;
+            childTransform.localScale       = cashTransform.LocalScale;
         }
     }
 

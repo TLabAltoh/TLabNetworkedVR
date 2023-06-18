@@ -326,9 +326,9 @@ public class TLabSyncClient : MonoBehaviour
                     {
                         string guestName = prefabName + obj.seatIndex.ToString();
 
-                        m_rightHand.name = guestName + ".RTouch";
-                        m_leftHand.name = guestName + ".LTouch";
-                        m_cameraRig.name = guestName + ".Head";
+                        m_rightHand.name    = guestName + ".RTouch";
+                        m_leftHand.name     = guestName + ".LTouch";
+                        m_cameraRig.name    = guestName + ".Head";
 
                         m_cameraRig.transform.localPosition = Vector3.zero;
                         m_cameraRig.transform.localRotation = Quaternion.identity;
@@ -345,9 +345,9 @@ public class TLabSyncClient : MonoBehaviour
                             m_rootTransform.rotation = anchor.rotation;
                         }
 
-                        m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
-                        m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
-                        m_cameraRig.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
+                        m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync  = true;
+                        m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync   = true;
+                        m_cameraRig.GetComponent<TLabSyncGrabbable>().m_enableSync  = true;
                     }
 
                     // TAdd TLabSyncGrabbable to hash table for fast lookup by name
@@ -369,7 +369,6 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.guestDisconnect)
                 {
                     #region
-
                     string guestName = prefabName + obj.seatIndex.ToString();
 
                     GameObject guestRTouch  = GameObject.Find(guestName + ".RTouch");
@@ -411,13 +410,11 @@ public class TLabSyncClient : MonoBehaviour
                     Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
                     return;
-
                     #endregion
                 }
                 else if (obj.action == (int)WebAction.guestParticipation)
                 {
                     #region
-
                     Vector3 respownPos      = new Vector3(0.0f, -0.5f, 0.0f);
                     Quaternion respownRot   = Quaternion.identity;
 
@@ -449,58 +446,6 @@ public class TLabSyncClient : MonoBehaviour
                         m_grabbables[guestHead.name] = guestHead.GetComponent<TLabSyncGrabbable>();
                     }
 
-                    // Notify newly joined players of objects you have locked
-
-                    if (m_rightHand != null)
-                    {
-                        TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
-                        if (vrHandRight != null)
-                        {
-                            if (vrHandRight.enabled == false) return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
-                            if (grabbable != null) grabbable.GrabbLock(true);
-                        }
-
-                        TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
-                        if (vrTrackingHandRight != null)
-                        {
-                            if (vrTrackingHandRight.enabled == false) return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
-                            if (grabbable != null) grabbable.GrabbLock(true);
-                        }
-                    }
-
-                    if (m_leftHand != null)
-                    {
-                        TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
-                        if (vrHandLeft != null)
-                        {
-                            if (vrHandLeft.enabled == false) return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
-                            if (grabbable != null) grabbable.GrabbLock(true);
-                        }
-
-                        TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
-                        if (vrTrackingHandLeft != null)
-                        {
-                            if (vrTrackingHandLeft.enabled == false) return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;
-                            if (grabbable != null) grabbable.GrabbLock(true);
-                        }
-                    }
-
                     m_guestTable[obj.seatIndex] = true;
 
                     // 参加時のコールバック
@@ -509,7 +454,6 @@ public class TLabSyncClient : MonoBehaviour
                     Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
 
                     return;
-
                     #endregion
                 }
                 else if (obj.action == (int)WebAction.allocateGravity)
@@ -518,70 +462,6 @@ public class TLabSyncClient : MonoBehaviour
                     WebObjectInfo webTransform = obj.transform;
                     TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
                     if (grabbable != null) grabbable.AllocateGravity(obj.active);
-
-                    return;
-                    #endregion
-                }
-                else if(obj.action == (int)WebAction.reflesh)
-                {
-                    #region
-                    if (m_rightHand != null)
-                    {
-                        TLabVRHand vrHandRight = m_rightHand.GetComponent<TLabVRHand>();
-                        if (vrHandRight != null)
-                        {
-                            if (vrHandRight.enabled == false)
-                                return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandRight.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
-                        }
-
-                        TLabVRTrackingHand vrTrackingHandRight = m_rightHand.GetComponent<TLabVRTrackingHand>();
-                        if (vrTrackingHandRight != null)
-                        {
-                            if (vrTrackingHandRight.enabled == false)
-                                return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandRight.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
-                        }
-                    }
-
-                    if (m_leftHand != null)
-                    {
-                        TLabVRHand vrHandLeft = m_leftHand.GetComponent<TLabVRHand>();
-                        if (vrHandLeft != null)
-                        {
-                            if (vrHandLeft.enabled == false)
-                                return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrHandLeft.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
-                        }
-
-                        TLabVRTrackingHand vrTrackingHandLeft = m_leftHand.GetComponent<TLabVRTrackingHand>();
-                        if (vrTrackingHandLeft != null)
-                        {
-                            if (vrTrackingHandLeft.enabled == false)
-                                return;
-
-                            // It is assumed that only TLabSyncGrabbable is used in a multiplayer environment
-                            // (TLabSyncGrabbable is assigned to TLabVRGrabbable)
-                            TLabSyncGrabbable grabbable = (TLabSyncGrabbable)vrTrackingHandLeft.CurrentGrabbable;
-                            if (grabbable != null)
-                                grabbable.GrabbLock(true);
-                        }
-                    }
 
                     return;
                     #endregion
