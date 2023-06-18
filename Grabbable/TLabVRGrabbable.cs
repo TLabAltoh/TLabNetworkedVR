@@ -123,24 +123,26 @@ public class TLabVRGrabbable : MonoBehaviour
     }
 #endif
 
-    protected virtual void EnableGravity(bool active)
+    public virtual void SetGravity(bool active)
     {
+        if (m_rb == null || m_useGravity == false) return;
+
         if (active == true)
         {
-            m_rb.isKinematic    = false;
-            m_rb.useGravity     = true;
+            m_rb.isKinematic = false;
+            m_rb.useGravity = true;
         }
         else
         {
-            m_rb.isKinematic    = true;
-            m_rb.useGravity     = false;
-            m_rb.interpolation  = RigidbodyInterpolation.Interpolate;
+            m_rb.isKinematic = true;
+            m_rb.useGravity = false;
+            m_rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
     }
 
     protected virtual void RbGripSwitch(bool grip)
     {
-        if (m_useGravity == true) EnableGravity(!grip);
+        SetGravity(!grip);
     }
 
     protected virtual void MainParentGrabbStart()
@@ -200,6 +202,7 @@ public class TLabVRGrabbable : MonoBehaviour
             else
             {
                 RbGripSwitch(false);
+                SetGravity(true);
 
                 m_mainParent = null;
 
@@ -276,8 +279,6 @@ public class TLabVRGrabbable : MonoBehaviour
             }
         }
     }
-
-    #region Devide
 
     protected virtual void CreateCombineMeshCollider()
     {
@@ -362,11 +363,6 @@ public class TLabVRGrabbable : MonoBehaviour
         return current ? 0 : 1;
     }
 
-    public virtual void ReCreateMeshCollider()
-    {
-        CreateCombineMeshCollider();
-    }
-
     public virtual void GetInitialChildTransform()
     {
         m_cashTransforms.Clear();
@@ -398,7 +394,12 @@ public class TLabVRGrabbable : MonoBehaviour
         }
     }
 
-    #endregion Devide
+#if UNITY_EDITOR
+    protected virtual void TestFunc()
+    {
+        Debug.Log("Befor Override");
+    }
+#endif
 
     protected virtual void Start()
     {
@@ -413,10 +414,14 @@ public class TLabVRGrabbable : MonoBehaviour
             m_rb = GetComponent<Rigidbody>();
             if(m_rb == null) m_rb = this.gameObject.AddComponent<Rigidbody>();
 
-            EnableGravity(m_useGravity);
+            SetGravity(m_useGravity);
         }
 
         m_scalingFactorInvert = 1 - m_scalingFactor;
+
+#if UNITY_EDITOR
+        TestFunc();
+#endif
     }
 
     protected virtual void Update()
