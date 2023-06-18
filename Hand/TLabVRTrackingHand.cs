@@ -71,6 +71,12 @@ public class TLabVRTrackingHand : MonoBehaviour
         }
     }
 
+    public OVRBone GetFingerBone(OVRSkeleton.BoneId id)
+    {
+        if (m_skeltonInitialized == false) return null;
+        return m_skeleton.Bones[(int)id];
+    }
+
     /// <summary>
     /// Record the current position of the OVRBone relative to the hand
     /// Right-click to copy from the Inspector and paste after playback is complete
@@ -79,6 +85,7 @@ public class TLabVRTrackingHand : MonoBehaviour
     {
         Gesture g = new Gesture();
         g.name = "New Gesture";
+
         List<Vector3> data = new List<Vector3>();
         foreach(var bone in m_fingerBones)
             data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
@@ -103,7 +110,7 @@ public class TLabVRTrackingHand : MonoBehaviour
             for(int i = 0; i < m_fingerBones.Count; i++)
             {
                 Vector3 currentData = m_skeleton.transform.InverseTransformPoint(m_fingerBones[i].Transform.position);
-                float distance = Vector3.Distance(currentData, gesture.fingerDatas[i]);
+                float distance      = Vector3.Distance(currentData, gesture.fingerDatas[i]);
 
                 if(distance > threshold)
                 {
@@ -130,11 +137,10 @@ public class TLabVRTrackingHand : MonoBehaviour
     /// <returns></returns>
     private bool GetGrabbDown()
     {
-        bool grabb = DetectGesture() == "Grabb";
-        bool grabbDown = grabb;
+        bool grabb      = DetectGesture() == "Grabb";
+        bool grabbDown  = grabb;
 
-        if (m_grabbPrev == true)
-            grabbDown = false;
+        if (m_grabbPrev == true) grabbDown = false;
 
         m_grabbPrev = grabb;
 
@@ -148,19 +154,17 @@ public class TLabVRTrackingHand : MonoBehaviour
     IEnumerator WaitForSkeltonInitialized()
     {
         // https://communityforums.atmeta.com/t5/Unity-VR-Development/Bones-list-is-empty/td-p/880261
-        while (m_skeleton.Bones.Count == 0)
-            yield return null;
+        while (m_skeleton.Bones.Count == 0) yield return null;
 
-        m_fingerBones = new List<OVRBone>(m_skeleton.Bones);
-        m_skeltonInitialized = true;
+        m_fingerBones           = new List<OVRBone>(m_skeleton.Bones);
+        m_skeltonInitialized    = true;
     }
 
     void Start()
     {
         m_skeltonInitialized = false;
 
-        if(m_skeleton != null)
-            StartCoroutine(WaitForSkeltonInitialized());
+        if(m_skeleton != null) StartCoroutine(WaitForSkeltonInitialized());
     }
 
     void Update()
@@ -171,14 +175,13 @@ public class TLabVRTrackingHand : MonoBehaviour
             return;
         }
 
-        if (!m_skeltonInitialized)
-            return;
+        if (!m_skeltonInitialized) return;
 
-        m_prevRotateAnchor = m_currentRotateAnchor;
-        m_currentRotateAnchor = m_hand.PointerPose.position + m_hand.PointerPose.forward * 1f;
+        m_prevRotateAnchor      = m_currentRotateAnchor;
+        m_currentRotateAnchor   = m_hand.PointerPose.position + m_hand.PointerPose.forward * 1f;
 
-        bool grip = DetectGesture() == "Grabb";
-        bool grabbDown = GetGrabbDown();
+        bool grip       = DetectGesture() == "Grabb";
+        bool grabbDown  = GetGrabbDown();
 
         m_laserPointer.maxLength = !grip ? m_maxDistance : 0.0f;
 
@@ -201,14 +204,11 @@ public class TLabVRTrackingHand : MonoBehaviour
                     // Grip
                     //
 
-                    GameObject target = m_raycastHit.collider.gameObject;
-                    TLabVRGrabbable grabbable = target.GetComponent<TLabVRGrabbable>();
+                    GameObject target           = m_raycastHit.collider.gameObject;
+                    TLabVRGrabbable grabbable   = target.GetComponent<TLabVRGrabbable>();
 
-                    if (grabbable == null)
-                        return;
-
-                    if (grabbable.AddParent(this.gameObject) == true)
-                        m_grabbable = grabbable;
+                    if (grabbable == null) return;
+                    if (grabbable.AddParent(this.gameObject) == true) m_grabbable = grabbable;
                 }
             }
         }
@@ -229,26 +229,21 @@ public class TLabVRTrackingHand : MonoBehaviour
                 //
 
                 TLabOutlineSelectable selectable = target.GetComponent<TLabOutlineSelectable>();
-
-                if (selectable != null)
-                    selectable.Selected = true;
+                if (selectable != null) selectable.Selected = true;
 
                 //
                 // PointerOn
                 //
 
                 Animator animator = target.GetComponent<Animator>();
-                if(animator != null)
-                    animator.SetBool("PointerOn", true);
+                if(animator != null) animator.SetBool("PointerOn", true);
 
                 //
                 // Rotate
                 //
 
                 TLabVRRotatable rotatable = target.GetComponent<TLabVRRotatable>();
-
-                if (rotatable == null)
-                    return;
+                if (rotatable == null) return;
 
                 if (m_hand.GetFingerIsPinching(OVRHand.HandFinger.Index))
                 {
