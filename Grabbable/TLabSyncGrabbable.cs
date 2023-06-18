@@ -94,14 +94,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = true;
     }
 
-    public void SetGravity(bool active)
-    {
-        if (m_rb != null) EnableGravity(active);
-    }
-
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
+
+        // 自分がこのオブジェクトのrigidbodyの担当
+        // 誰も掴んでいない
+        // ------> 重力計算を有効化
         SetGravity((m_grabbed == -1 && active) ? true : false);
     }
 
@@ -113,7 +112,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             m_subParent     = null;
             m_grabbed       = -1;
 
-            RbGripSwitch(false);
+            SetGravity(false);
         }
     }
 
@@ -125,7 +124,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             m_subParent     = null;
             m_grabbed       = -1;
 
-            RbGripSwitch(false);
+            SetGravity(false);
         }
     }
 
@@ -145,13 +144,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         string json = JsonUtility.ToJson(obj);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
-        Debug.Log("tlabvrhand: " + "force release");
+        Debug.Log("tlabsyncgrabbable: " + "force release");
     }
 
     public void GrabbLockFromOutside(int index)
     {
-        if (TLabSyncClient.Instalce.SeatIndex == index) return;
-
         if (index != -1)
         {
             if (m_mainParent != null)
@@ -161,18 +158,20 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             }
 
             m_grabbed = index;
+
+            if (m_rbAllocated == true) SetGravity(false);
         }
         else
+        {
             m_grabbed = -1;
-    }
-
-    public void GrabbLockSelf(int index)
-    {
-        m_grabbed = index;
+            if (m_rbAllocated == true) SetGravity(true);
+        }
     }
 
     public void GrabbLock(bool active)
     {
+        if (m_rbAllocated) SetGravity(!active);
+
         TLabSyncJson obj = new TLabSyncJson
         {
             role        = (int)WebRole.guest,
@@ -186,64 +185,44 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         string json = JsonUtility.ToJson(obj);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
-        Debug.Log("tlabvrhand: " + "grabb lock");
+        Debug.Log("tlabsyncgrabbable: " + "grabb lock");
     }
 
-#if UNITY_EDITOR
-    public override void InitializeRotatable()
+    public void SimpleLock(bool active)
     {
-        base.InitializeRotatable();
-    }
+        /*
+            -1 : No one is grabbing
+            -2 : No one grabbed, but Rigidbody does not calculate
+        */
 
-    public override void UseRigidbody(bool rigidbody, bool gravity)
-    {
-        base.UseRigidbody(rigidbody, gravity);
-    }
-#endif
+        // Ensure that the object you are grasping does not cover
+        // If someone has already grabbed the object, overwrite it
 
-    protected override void EnableGravity(bool active)
-    {
-        base.EnableGravity(active);
+        // parse.seatIndex	: player index that is grabbing the object
+        // seatIndex		: index of the socket actually communicating
+
+        if (m_rbAllocated) SetGravity(!active);
+
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role        = (int)WebRole.guest,
+            action      = (int)WebAction.grabbLock,
+            seatIndex   = active ? -2 : -1,
+            transform   = new WebObjectInfo
+            {
+                id = this.gameObject.name
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+
+        Debug.Log("tlabsyncgrabbable: " + "simple lock");
     }
 
     protected override void RbGripSwitch(bool grip)
     {
-        if (m_rbAllocated && m_useGravity)
-        {
-            // 自分自身がGravityの計算を担当している
-            EnableGravity(!grip);
-        }
-        else if (m_enableSync && m_useRigidbody && m_useGravity)
-        {
-            // このオブジェクトのGravityが有効化されている
-            // このオブジェクトの同期が有効化されている
-
-            // このRigidbodyのGravity計算担当に自分が掴むことを通知
-            TLabSyncJson obj = new TLabSyncJson
-            {
-                role        = (int)WebRole.guest,
-                action      = (int)WebAction.setGravity,
-                active      = !grip,
-                transform   = new WebObjectInfo
-                {
-                    id = this.gameObject.name
-                }
-            };
-            string json = JsonUtility.ToJson(obj);
-            TLabSyncClient.Instalce.SendWsMessage(json);
-
-            Debug.Log("tlabvrhand: " + "set gravity");
-        }
-    }
-
-    protected override void MainParentGrabbStart()
-    {
-        base.MainParentGrabbStart();
-    }
-
-    protected override void SubParentGrabStart()
-    {
-        base.SubParentGrabStart();
+        // 自分自身がGravityの計算を担当している
+        GrabbLock(grip);
     }
 
     public override bool AddParent(GameObject parent)
@@ -253,74 +232,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         if(m_locked == true || m_grabbed != -1) return false;
 
-        if (m_mainParent == null)
-        {
-            RbGripSwitch(true);
-
-            m_mainParent = parent;
-
-            MainParentGrabbStart();
-
-            Debug.Log("tlabvrhand: " + parent.ToString() + " mainParent added");
-
-            GrabbLock(true);
-
-            return true;
-        }
-        else if (m_subParent == null)
-        {
-            m_subParent = parent;
-
-            SubParentGrabStart();
-
-            Debug.Log("tlabvrhand: " + parent.ToString() + " subParent added");
-            return true;
-        }
-
-        Debug.Log("tlabvrhand: cannot add parent");
-        return false;
-    }
-
-    public override bool RemoveParent(GameObject parent)
-    {
-        if (m_mainParent == parent)
-        {
-            if (m_subParent != null)
-            {
-                m_mainParent    = m_subParent;
-                m_subParent     = null;
-
-                MainParentGrabbStart();
-
-                Debug.Log("tlabvrhand: " + "m_main released and m_sub added");
-
-                return true;
-            }
-            else
-            {
-                RbGripSwitch(false);
-
-                m_mainParent = null;
-
-                Debug.Log("tlabvrhand: " + "m_main released");
-
-                GrabbLock(false);
-
-                return true;
-            }
-        }
-        else if (m_subParent == parent)
-        {
-            m_subParent = null;
-
-            MainParentGrabbStart();
-
-            Debug.Log("tlabvrhand: m_sub released");
-
-            return true;
-        }
-
-        return false;
+        return base.AddParent(parent);
     }
 
     public void SyncTransform()
@@ -452,21 +364,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = false;
     }
 
-    protected override void UpdateScale()
-    {
-        base.UpdateScale();
-    }
-
-    protected override void UpdatePosition()
-    {
-        base.UpdatePosition();
-    }
-
-    #region Devide
-
     public void OnDevideButtonClick()
     {
         Devide();
+    }
+
+    public void DivideFromOutside(bool active)
+    {
+        base.Devide(active);
     }
 
     public override int Devide()
@@ -502,26 +407,18 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return result;
     }
 
-    public void DivideFromOutside(bool active)
+#if UNITY_EDITOR
+    protected override void TestFunc()
     {
-        base.Devide(active);
+        Debug.Log("After Override");
     }
-
-    public override void GetInitialChildTransform()
-    {
-        base.GetInitialChildTransform();
-    }
-
-    public override void SetInitialChildTransform()
-    {
-        base.SetInitialChildTransform();
-    }
-
-    #endregion Devide
+#endif
 
     protected override void Start()
     {
         base.Start();
+
+        SetGravity(false);
         TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 
@@ -549,6 +446,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private void OnDestroy()
     {
-        GrabbLock(false);
+        // このオブジェクトをロックしているのが自分だったら解除する
+        if(TLabSyncClient.Instalce.SeatIndex == m_grabbed && m_grabbed != -1) GrabbLock(false);
     }
 }

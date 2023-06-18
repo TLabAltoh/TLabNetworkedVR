@@ -79,7 +79,6 @@ public enum WebAction
     guestDisconnect,
     guestParticipation,
     allocateGravity,
-    setGravity,
     grabbLock,
     forceRelease,
     divideGrabber,
@@ -393,16 +392,6 @@ public class TLabSyncClient : MonoBehaviour
                         UnityEngine.GameObject.Destroy(guestHead);
                     }
 
-                    TLabSyncGrabbable[] grabbables = FindObjectsOfType<TLabSyncGrabbable>();
-                    foreach (TLabSyncGrabbable grabbable in grabbables)
-                    {
-                        if(grabbable.GrabbedIndex == obj.seatIndex)
-                        {
-                            grabbable.GrabbLockSelf(-1);
-                            if (grabbable.RbAllocated) grabbable.SetGravity(true);
-                        }
-                    }
-
                     m_guestTable[obj.seatIndex] = false;
 
                     foreach(TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestDisconnected(obj.seatIndex);
@@ -476,17 +465,6 @@ public class TLabSyncClient : MonoBehaviour
                 if (grabbable == null) return;
 
                 grabbable.SyncFromOutside(webTransform);
-
-                return;
-            }
-            else if (obj.action == (int)WebAction.setGravity)
-            {
-                WebObjectInfo webTransform = obj.transform;
-                TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
-
-                if (grabbable == null) return;
-
-                grabbable.SetGravity(obj.active);
 
                 return;
             }
