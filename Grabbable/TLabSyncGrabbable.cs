@@ -170,7 +170,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public void GrabbLock(bool active)
     {
-        if (m_rbAllocated) SetGravity(!active);
+        if (m_rbAllocated == true) SetGravity(!active);
 
         TLabSyncJson obj = new TLabSyncJson
         {
