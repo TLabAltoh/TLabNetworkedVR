@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using NativeWebSocket;
@@ -261,19 +263,23 @@ public class TLabSyncClient : MonoBehaviour
         Debug.Log("tlabsyncclient: " + "force reflesh");
     }
 
-    async void Start()
+    #region ConnectServer
+
+    private async IAsyncEnumerator<int> ConnectServerTask()
     {
+        yield return -1;
+
         websocket = new WebSocket(m_serverAddr);
 
         websocket.OnOpen += () =>
         {
-            if (m_regist)
+            if (m_regist == true)
             {
                 TLabSyncGrabbable[] grabbables = FindObjectsOfType<TLabSyncGrabbable>();
                 foreach (TLabSyncGrabbable grabbable in grabbables)
                 {
                     GameObject go = grabbable.gameObject;
-                    if(go != m_leftHand && go != m_rightHand && go != m_cameraRig) grabbable.SyncTransform();
+                    if (go != m_leftHand && go != m_rightHand && go != m_cameraRig) grabbable.SyncTransform();
                 }
             }
 
@@ -310,7 +316,7 @@ public class TLabSyncClient : MonoBehaviour
             Debug.Log("tlabsyncclient: OnMessage - " + message);
 #endif
 
-            if(obj.role == (int)WebRole.server)
+            if (obj.role == (int)WebRole.server)
             {
                 if (obj.action == (int)WebAction.acept)
                 {
@@ -332,7 +338,7 @@ public class TLabSyncClient : MonoBehaviour
                         m_cameraRig.transform.localPosition = Vector3.zero;
                         m_cameraRig.transform.localRotation = Quaternion.identity;
 
-                        if(m_seatIndex == 0)
+                        if (m_seatIndex == 0)
                         {
                             m_rootTransform.position = m_hostAnchor.position;
                             m_rootTransform.rotation = m_hostAnchor.rotation;
@@ -362,7 +368,6 @@ public class TLabSyncClient : MonoBehaviour
                         m_animators[animator.gameObject.name] = animator;
 
                     return;
-
                     #endregion
                 }
                 else if (obj.action == (int)WebAction.guestDisconnect)
@@ -374,7 +379,7 @@ public class TLabSyncClient : MonoBehaviour
                     GameObject guestLTouch  = GameObject.Find(guestName + ".LTouch");
                     GameObject guestHead    = GameObject.Find(guestName + ".Head");
 
-                    if(guestRTouch != null)
+                    if (guestRTouch != null)
                     {
                         m_grabbables.Remove(guestRTouch.name);
                         UnityEngine.GameObject.Destroy(guestRTouch);
@@ -394,7 +399,7 @@ public class TLabSyncClient : MonoBehaviour
 
                     m_guestTable[obj.seatIndex] = false;
 
-                    foreach(TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestDisconnected(obj.seatIndex);
+                    foreach (TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestDisconnected(obj.seatIndex);
 
                     Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
 
@@ -419,7 +424,7 @@ public class TLabSyncClient : MonoBehaviour
                         m_grabbables[guestRTouch.name] = guestRTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
-                    if(m_guestLTouch != null)
+                    if (m_guestLTouch != null)
                     {
                         GameObject guestLTouch  = Instantiate(m_guestLTouch, respownPos, respownRot);
                         guestLTouch.name        = guestName + ".LTouch";
@@ -427,7 +432,7 @@ public class TLabSyncClient : MonoBehaviour
                         m_grabbables[guestLTouch.name] = guestLTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
-                    if(m_guestHead != null)
+                    if (m_guestHead != null)
                     {
                         GameObject guestHead    = Instantiate(m_guestHead, respownPos, respownRot);
                         guestHead.name          = guestName + ".Head";
@@ -448,7 +453,7 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.allocateGravity)
                 {
                     #region
-                    WebObjectInfo webTransform = obj.transform;
+                    WebObjectInfo webTransform  = obj.transform;
                     TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
                     if (grabbable != null) grabbable.AllocateGravity(obj.active);
 
@@ -457,6 +462,7 @@ public class TLabSyncClient : MonoBehaviour
                 }
             }
 
+            #region Default
             if (obj.action == (int)WebAction.syncTransform)
             {
                 WebObjectInfo webTransform = obj.transform;
@@ -470,7 +476,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.grabbLock)
             {
-                WebObjectInfo webTransform = obj.transform;
+                WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -481,7 +487,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.forceRelease)
             {
-                WebObjectInfo webTransform = obj.transform;
+                WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -492,7 +498,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.divideGrabber)
             {
-                WebObjectInfo webTransform = obj.transform;
+                WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -501,17 +507,17 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if(obj.action == (int)WebAction.syncAnim)
+            else if (obj.action == (int)WebAction.syncAnim)
             {
                 WebAnimInfo webAnimator = obj.animator;
-                Animator animator = m_animators[webAnimator.id] as Animator;
+                Animator animator       = m_animators[webAnimator.id] as Animator;
 
                 if (animator == null) return;
 
-                if (webAnimator.type == (int)WebAnimValueType.typeFloat)　       animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeInt)　    animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeBool)　   animator.SetBool(webAnimator.parameter, webAnimator.boolVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeTrigger)　animator.SetTrigger(webAnimator.parameter);
+                if (webAnimator.type == (int)WebAnimValueType.typeFloat) animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeInt) animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeBool) animator.SetBool(webAnimator.parameter, webAnimator.boolVal);
+                else if (webAnimator.type == (int)WebAnimValueType.typeTrigger) animator.SetTrigger(webAnimator.parameter);
 
                 return;
             }
@@ -521,10 +527,39 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
+            #endregion Default
         };
 
         // waiting for messages
         await websocket.Connect();
+
+        yield break;
+    }
+
+    private IEnumerator ConnectServerTaskStart()
+    {
+        yield return null;
+
+        IAsyncEnumerator<int> task = ConnectServerTask();
+        task.MoveNextAsync();
+
+        yield return null;
+
+        task.MoveNextAsync();
+
+        yield break;
+    }
+
+    public void ConnectServerAsync()
+    {
+        StartCoroutine(ConnectServerTaskStart());
+    }
+
+    #endregion ConnectServer
+
+    void Start()
+    {
+        ConnectServerAsync();
     }
 
     public async void SendWsMessage(string json)
@@ -540,12 +575,12 @@ public class TLabSyncClient : MonoBehaviour
     void Update()
     {
 #if !UNITY_WEBGL || UNITY_EDITOR
-        websocket.DispatchMessageQueue();
+        if(websocket != null) websocket.DispatchMessageQueue();
 #endif
     }
 
     private async void OnApplicationQuit()
     {
-        await websocket.Close();
+        if(websocket != null) await websocket.Close();
     }
 }

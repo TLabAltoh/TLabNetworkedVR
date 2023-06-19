@@ -125,7 +125,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
     public virtual void SetGravity(bool active)
     {
-        if (m_rb == null || m_useGravity == false) return;
+        if (m_rb == null || m_useRigidbody == false || m_useGravity == false) return;
 
         if (active == true)
         {
@@ -414,13 +414,17 @@ public class TLabVRGrabbable : MonoBehaviour
             m_rb = GetComponent<Rigidbody>();
             if(m_rb == null) m_rb = this.gameObject.AddComponent<Rigidbody>();
 
+            m_rb.isKinematic = true;
+            m_rb.useGravity = false;
+            m_rb.interpolation = RigidbodyInterpolation.Interpolate;
+
             SetGravity(m_useGravity);
         }
 
         m_scalingFactorInvert = 1 - m_scalingFactor;
 
 #if UNITY_EDITOR
-        TestFunc();
+        // TestFunc();
 #endif
     }
 
