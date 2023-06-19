@@ -407,6 +407,16 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return result;
     }
 
+    public override void SetInitialChildTransform()
+    {
+        base.SetInitialChildTransform();
+
+        if (m_enableDivide == false) return;
+
+        TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
+        foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
+    }
+
 #if UNITY_EDITOR
     protected override void TestFunc()
     {
