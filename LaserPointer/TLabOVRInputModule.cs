@@ -438,13 +438,12 @@ namespace UnityEngine.EventSystems
         /// </summary>
         private void ProcessMouseEvent(MouseState mouseData)
         {
-            var pressed = mouseData.AnyPressesThisFrame();
-            var released = mouseData.AnyReleasesThisFrame();
+            var pressed     = mouseData.AnyPressesThisFrame();
+            var released    = mouseData.AnyReleasesThisFrame();
 
             var leftButtonData = mouseData.GetButtonState(PointerEventData.InputButton.Left).eventData;
 
-            if (!UseMouse(pressed, released, leftButtonData.buttonData))
-                return;
+            if (!UseMouse(pressed, released, leftButtonData.buttonData)) return;
 
             // Process the first mouse button fully
             ProcessMousePress(leftButtonData);
@@ -474,11 +473,8 @@ namespace UnityEngine.EventSystems
 
             if (eventSystem.sendNavigationEvents)
             {
-                if (!usedEvent)
-                    usedEvent |= SendMoveEventToSelectedObject();
-
-                if (!usedEvent)
-                    SendSubmitEventToSelectedObject();
+                if (!usedEvent) usedEvent |= SendMoveEventToSelectedObject();
+                if (!usedEvent) SendSubmitEventToSelectedObject();
             }
 
             // Processing required to make scrollbars work as intended
@@ -489,10 +485,8 @@ namespace UnityEngine.EventSystems
             {
                 ProcessMouseEvent(leftState);
 
-                if (m_leftPressing == true)
-                    m_leftPressing = !leftState.AnyReleasesThisFrame();
-                else
-                    m_leftPressing = leftState.AnyPressesThisFrame();
+                if (m_leftPressing == true) m_leftPressing = !leftState.AnyReleasesThisFrame();
+                else                        m_leftPressing = leftState.AnyPressesThisFrame();
             }
 
             MouseState rightState = GetGazePointerData(rayTransformRight, m_CursorRight, OVRInput.Controller.RTouch);
@@ -501,10 +495,8 @@ namespace UnityEngine.EventSystems
             {
                 ProcessMouseEvent(rightState);
 
-                if (m_rightPressing == true)
-                    m_rightPressing = !rightState.AnyReleasesThisFrame();
-                else
-                    m_rightPressing = rightState.AnyPressesThisFrame();
+                if (m_rightPressing == true)    m_rightPressing = !rightState.AnyReleasesThisFrame();
+                else                            m_rightPressing = rightState.AnyPressesThisFrame();
             }
 
 #if !UNITY_ANDROID
@@ -517,8 +509,7 @@ namespace UnityEngine.EventSystems
         /// </summary>
         private static bool UseMouse(bool pressed, bool released, PointerEventData pointerData)
         {
-            if (pressed || released || IsPointerMoving(pointerData) || pointerData.IsScrolling())
-                return true;
+            if (pressed || released || IsPointerMoving(pointerData) || pointerData.IsScrolling()) return true;
 
             return false;
         }
@@ -532,12 +523,12 @@ namespace UnityEngine.EventSystems
         /// <param name="to">to this object</param>
         protected void CopyFromTo(OVRPointerEventData @from, OVRPointerEventData @to)
         {
-            @to.position = @from.position;
-            @to.delta = @from.delta;
-            @to.scrollDelta = @from.scrollDelta;
-            @to.pointerCurrentRaycast = @from.pointerCurrentRaycast;
-            @to.pointerEnter = @from.pointerEnter;
-            @to.worldSpaceRay = @from.worldSpaceRay;
+            @to.position                = @from.position;
+            @to.delta                   = @from.delta;
+            @to.scrollDelta             = @from.scrollDelta;
+            @to.pointerCurrentRaycast   = @from.pointerCurrentRaycast;
+            @to.pointerEnter            = @from.pointerEnter;
+            @to.worldSpaceRay           = @from.worldSpaceRay;
         }
         /// <summary>
         /// Convenience function for cloning PointerEventData
@@ -546,11 +537,11 @@ namespace UnityEngine.EventSystems
         /// <param name="to">to this object</param>
         protected new void CopyFromTo(PointerEventData @from, PointerEventData @to)
         {
-            @to.position = @from.position;
-            @to.delta = @from.delta;
-            @to.scrollDelta = @from.scrollDelta;
-            @to.pointerCurrentRaycast = @from.pointerCurrentRaycast;
-            @to.pointerEnter = @from.pointerEnter;
+            @to.position                = @from.position;
+            @to.delta                   = @from.delta;
+            @to.scrollDelta             = @from.scrollDelta;
+            @to.pointerCurrentRaycast   = @from.pointerCurrentRaycast;
+            @to.pointerEnter            = @from.pointerEnter;
         }
 
 
@@ -608,8 +599,8 @@ namespace UnityEngine.EventSystems
         {
             Vector3[] corners = new Vector3[4];
             rectTransform.GetWorldCorners(corners);
-            Vector3 BottomEdge = corners[3] - corners[0];
-            Vector3 LeftEdge = corners[1] - corners[0];
+            Vector3 BottomEdge  = corners[3] - corners[0];
+            Vector3 LeftEdge    = corners[1] - corners[0];
             rectTransform.GetWorldCorners(corners);
             return Vector3.Cross(BottomEdge, LeftEdge).normalized;
         }
@@ -776,8 +767,7 @@ namespace UnityEngine.EventSystems
         /// </summary>
         private bool ShouldStartDrag(PointerEventData pointerEvent)
         {
-            if (!pointerEvent.useDragThreshold)
-                return true;
+            if (!pointerEvent.useDragThreshold) return true;
 
             if (!pointerEvent.IsVRPointer())
             {
@@ -794,9 +784,9 @@ namespace UnityEngine.EventSystems
 #endif
                 // When it's not a screen space pointer we have to look at the angle it moved rather than the pixels distance
                 // For gaze based pointing screen-space distance moved will always be near 0
-                Vector3 cameraPos = pointerEvent.pressEventCamera.transform.position;
-                Vector3 pressDir = (pointerEvent.pointerPressRaycast.worldPosition - cameraPos).normalized;
-                Vector3 currentDir = (pointerEvent.pointerCurrentRaycast.worldPosition - cameraPos).normalized;
+                Vector3 cameraPos   = pointerEvent.pressEventCamera.transform.position;
+                Vector3 pressDir    = (pointerEvent.pointerPressRaycast.worldPosition - cameraPos).normalized;
+                Vector3 currentDir  = (pointerEvent.pointerCurrentRaycast.worldPosition - cameraPos).normalized;
                 return Vector3.Dot(pressDir, currentDir) < Mathf.Cos(Mathf.Deg2Rad * (angleDragThreshold));
             }
         }
@@ -814,10 +804,8 @@ namespace UnityEngine.EventSystems
         /// <returns></returns>
         static bool IsPointerMoving(PointerEventData pointerEvent)
         {
-            if (pointerEvent.IsVRPointer())
-                return true;
-            else
-                return pointerEvent.IsPointerMoving();
+            if (pointerEvent.IsVRPointer()) return true;
+            else return pointerEvent.IsPointerMoving();
         }
 
         protected Vector2 SwipeAdjustedPosition(Vector2 originalPosition, PointerEventData pointerEvent)
@@ -876,9 +864,9 @@ namespace UnityEngine.EventSystems
                 {
                     ExecuteEvents.Execute(pointerEvent.pointerPress, pointerEvent, ExecuteEvents.pointerUpHandler);
 
-                    pointerEvent.eligibleForClick = false;
-                    pointerEvent.pointerPress = null;
-                    pointerEvent.rawPointerPress = null;
+                    pointerEvent.eligibleForClick   = false;
+                    pointerEvent.pointerPress       = null;
+                    pointerEvent.rawPointerPress    = null;
                 }
                 ExecuteEvents.Execute(pointerEvent.pointerDrag, pointerEvent, ExecuteEvents.dragHandler);
             }
@@ -892,8 +880,8 @@ namespace UnityEngine.EventSystems
         {
             //todo: enable for Unity Input System
 #if ENABLE_LEGACY_INPUT_MANAGER
-            var pressed = Input.GetKeyDown(gazeClickKey) || OVRInput.GetDown(joyPadClickButton, controller);
-            var released = Input.GetKeyUp(gazeClickKey) || OVRInput.GetUp(joyPadClickButton, controller);
+            var pressed     = Input.GetKeyDown(gazeClickKey) || OVRInput.GetDown(joyPadClickButton, controller);
+            var released    = Input.GetKeyUp(gazeClickKey) || OVRInput.GetUp(joyPadClickButton, controller);
 
 #if UNITY_ANDROID && !UNITY_EDITOR
             pressed |= Input.GetMouseButtonDown(0);
@@ -904,12 +892,9 @@ namespace UnityEngine.EventSystems
 			var released = OVRInput.GetUp(joyPadClickButton);
 #endif
 
-            if (pressed && released)
-                return PointerEventData.FramePressState.PressedAndReleased;
-            if (pressed)
-                return PointerEventData.FramePressState.Pressed;
-            if (released)
-                return PointerEventData.FramePressState.Released;
+            if (pressed && released)    return PointerEventData.FramePressState.PressedAndReleased;
+            if (pressed)                return PointerEventData.FramePressState.Pressed;
+            if (released)               return PointerEventData.FramePressState.Released;
             return PointerEventData.FramePressState.NotChanged;
         }
 
