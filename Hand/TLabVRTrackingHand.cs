@@ -62,6 +62,14 @@ public class TLabVRTrackingHand : MonoBehaviour
         }
     }
 
+    public Transform PointerPose
+    {
+        get
+        {
+            return m_hand.PointerPose.transform;
+        }
+    }
+
     private Vector3 HandAngulerVelocity
     {
         get
@@ -83,12 +91,11 @@ public class TLabVRTrackingHand : MonoBehaviour
     /// </summary>
     private void SavePose()
     {
-        Gesture g = new Gesture();
-        g.name = "New Gesture";
+        Gesture g   = new Gesture();
+        g.name      = "New Gesture";
 
         List<Vector3> data = new List<Vector3>();
-        foreach(var bone in m_fingerBones)
-            data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
+        foreach(var bone in m_fingerBones) data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
 
         g.fingerDatas = data;
         m_gestures.Add(g);
@@ -123,8 +130,8 @@ public class TLabVRTrackingHand : MonoBehaviour
 
             if(!isDiscarded && sumDistance < currentMin)
             {
-                currentMin = sumDistance;
-                result = gesture.name;
+                currentMin  = sumDistance;
+                result      = gesture.name;
             }
         }
 
@@ -163,7 +170,6 @@ public class TLabVRTrackingHand : MonoBehaviour
     void Start()
     {
         m_skeltonInitialized = false;
-
         if(m_skeleton != null) StartCoroutine(WaitForSkeltonInitialized());
     }
 

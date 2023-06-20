@@ -16,16 +16,13 @@ public class TLabSyncGrabbableEditor : Editor
         serializedObject.Update();
 
         TLabSyncGrabbable grabbable = target as TLabSyncGrabbable;
-        TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
+        TLabVRRotatable rotatable   = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
-        if (rotatable != null)
+        if (rotatable != null && GUILayout.Button("Initialize for Rotatable"))
         {
-            if (GUILayout.Button("Initialize for Rotatable"))
-            {
-                grabbable.InitializeRotatable();
-                EditorUtility.SetDirty(grabbable);
-                EditorUtility.SetDirty(rotatable);
-            }
+            grabbable.InitializeRotatable();
+            EditorUtility.SetDirty(grabbable);
+            EditorUtility.SetDirty(rotatable);
         }
 
         serializedObject.ApplyModifiedProperties();

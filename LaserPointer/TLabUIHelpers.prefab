@@ -240,7 +240,7 @@ GameObject:
   - component: {fileID: 2459684400625350834}
   - component: {fileID: 2459684400625350844}
   - component: {fileID: 2459684400625350835}
-  - component: {fileID: 2459684400625350845}
+  - component: {fileID: 7666927903750330860}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -295,6 +295,8 @@ MonoBehaviour:
   rayTransformRight: {fileID: 0}
   m_CursorLeft: {fileID: 2459684400918327762}
   m_CursorRight: {fileID: 2459684400684206458}
+  m_leftPressing: 0
+  m_rightPressing: 0
   joyPadClickButton: 2105345
   gazeClickKey: 0
   performSphereCastForGazepointer: 0
@@ -312,7 +314,7 @@ MonoBehaviour:
   m_CancelButton: Cancel
   m_InputActionsPerSecond: 10
   m_AllowActivationOnMobileDevice: 1
---- !u!114 &2459684400625350845
+--- !u!114 &7666927903750330860
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -321,13 +323,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 2459684400625350833}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1433631a168cf44997ec1f4c1ad9136, type: 3}
+  m_Script: {fileID: 11500000, guid: 9cedf5419185efb47999c629c63801f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_inputModule: {fileID: 2459684400625350835}
-  m_leftHand: {fileID: 0}
-  m_rightHand: {fileID: 0}
-  m_useHandTracking: 0
+  m_vrControllerHandRight: {fileID: 0}
+  m_vrControllerHandLeft: {fileID: 0}
+  m_vrTrackingHandRight: {fileID: 0}
+  m_vrTrackingHandLeft: {fileID: 0}
+  m_vrHandRight: {fileID: 0}
+  m_vrHandLeft: {fileID: 0}
+  m_vrControllerRight: {fileID: 0}
+  m_vrControllerLeft: {fileID: 0}
+  m_vrCustomControllerRight: {fileID: 0}
+  m_vrCustomControllerLeft: {fileID: 0}
 --- !u!1 &2459684400775635763
 GameObject:
   m_ObjectHideFlags: 0
