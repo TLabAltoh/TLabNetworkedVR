@@ -102,6 +102,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         // 誰も掴んでいない
         // ------> 重力計算を有効化
         SetGravity((m_grabbed == -1 && active) ? true : false);
+
+        Debug.Log("tlabsyncgrabbable: rb allocated " + (m_grabbed == -1 && active) + "\t" + this.gameObject.name);
     }
 
     public void ForceReleaseSelf()

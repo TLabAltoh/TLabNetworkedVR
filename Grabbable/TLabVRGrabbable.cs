@@ -414,9 +414,17 @@ public class TLabVRGrabbable : MonoBehaviour
             m_rb = GetComponent<Rigidbody>();
             if(m_rb == null) m_rb = this.gameObject.AddComponent<Rigidbody>();
 
-            m_rb.isKinematic = true;
-            m_rb.useGravity = false;
-            m_rb.interpolation = RigidbodyInterpolation.Interpolate;
+            if(m_useGravity == false)
+            {
+                m_rb.isKinematic = true;
+                m_rb.useGravity = false;
+                m_rb.interpolation = RigidbodyInterpolation.Interpolate;
+            }
+            else
+            {
+                m_rb.isKinematic = false;
+                m_rb.useGravity = true;
+            }
 
             SetGravity(m_useGravity);
         }
