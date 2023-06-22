@@ -2,80 +2,85 @@ Shader "TLab/TLabOutline"
 {
     Properties
     {
-		_MainTex("Base (RGB)", 2D) = "white" { }
-		_MainColor("Main Color", Color) = (.5,.5,.5,1)
+        /*
+        _MainTex("Base (RGB)", 2D) = "white" { }
+        _MainColor("Main Color", Color) = (.5,.5,.5,1)
         _Metallic ("Metallic", Range(0,1)) = 0.0
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
-		_OutlineColor("Outline Color", Color) = (0,0,0,1)
-		_OutlineWidth("Outline Width", Range(0, 0.1)) = .005
+        */
+        _OutlineColor("Outline Color", Color) = (0,0,0,1)
+        _OutlineWidth("Outline Width", Range(0, 0.1)) = .005
+        _ZOffset("Z Offset", Range(-0.5, 0.5)) = .0
     }
 
     SubShader
     {
-     //   Tags { "RenderType"="Opaque" }
-     //   LOD 200
+        /*
+        Tags { "RenderType"="Opaque" }
+        LOD 200
 
-     //   CGPROGRAM
-     //   // Physically based Standard lighting model, and enable shadows on all light types
-     //   #pragma surface surf Standard fullforwardshadows
+        CGPROGRAM
+        // Physically based Standard lighting model, and enable shadows on all light types
+        #pragma surface surf Standard fullforwardshadows
 
-     //   // Use shader model 3.0 target, to get nicer looking lighting
-     //   #pragma target 3.0
-     //   // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-     //   // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-     //   // #pragma instancing_options assumeuniformscaling
-     //   UNITY_INSTANCING_BUFFER_START(Props)
-     //       // put more per-instance properties here
-     //   UNITY_INSTANCING_BUFFER_END(Props)
+        // Use shader model 3.0 target, to get nicer looking lighting
+        #pragma target 3.0
+        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
+        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
+        // #pragma instancing_options assumeuniformscaling
+        UNITY_INSTANCING_BUFFER_START(Props)
+            // put more per-instance properties here
+        UNITY_INSTANCING_BUFFER_END(Props)
 
-     //   // MainTex
-	    //sampler2D _MainTex;
+        // MainTex
+        sampler2D _MainTex;
 
-     //   struct Input
-     //   {
-     //       float2 uv_MainTex;
-     //   };
+        struct Input
+        {
+            float2 uv_MainTex;
+        };
 
-     //   // MainColor
-	    //uniform float4 _MainColor;
+        // MainColor
+        uniform float4 _MainColor;
 
-     //   // Smoothness
-     //   half _Glossiness;
+        // Smoothness
+        half _Glossiness;
 
-     //   // Metallic
-     //   half _Metallic;
+        // Metallic
+        half _Metallic;
 
-     //   void surf (Input IN, inout SurfaceOutputStandard o)
-     //   {
-     //       // Albedo comes from a texture tinted by color
-     //       fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainColor;
-     //       o.Albedo = c.rgb;
-     //       // Metallic and smoothness come from slider variables
-     //       o.Metallic = _Metallic;
-     //       o.Smoothness = _Glossiness;
-     //       o.Alpha = c.a;
-     //   }
+        void surf (Input IN, inout SurfaceOutputStandard o)
+        {
+            // Albedo comes from a texture tinted by color
+            fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainColor;
+            o.Albedo = c.rgb;
+            // Metallic and smoothness come from slider variables
+            o.Metallic = _Metallic;
+            o.Smoothness = _Glossiness;
+            o.Alpha = c.a;
+        }
 
-     //   ENDCG
-
+        ENDCG
+        */
         Pass
         {
-			Name "OUTLINE"
+            Name "OUTLINE"
 
-            Tags { "RenderType"="Transparent" "Queue" = "Transparent" }
+            Tags { "RenderType" = "Transparent" "Queue" = "Transparent" }
             Blend SrcAlpha OneMinusSrcAlpha
 
             LOD 100
 
-			Cull Front
+            Cull Front
 
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
 
-			#include "UnityCG.cginc"
+            #include "UnityCG.cginc"
 
             // Outline
+            uniform float _ZOffset;
 	        uniform float _OutlineWidth;
 	        uniform float4 _OutlineColor;
 
@@ -107,9 +112,16 @@ Shader "TLab/TLabOutline"
 				//o.pos.xy += offset * UNITY_Z_0_FAR_FROM_CLIPSPACE(o.pos.z) * _OutlineWidth;
                 //o.pos.xy += offset * _OutlineWidth;
 
-                float3 normalWS = UnityObjectToWorldNormal( v.color.rgb );
-                float3 positionWS = mul( unity_ObjectToWorld, v.vertex );
-                o.pos = UnityWorldToClipPos( positionWS + normalWS * _OutlineWidth );
+                float3 normalWS     = UnityObjectToWorldNormal( v.color.rgb );
+                float3 positionWS   = mul( unity_ObjectToWorld, v.vertex );
+
+                // normalWS * _OutlineWidth
+
+                float4 beforPos0    = UnityWorldToClipPos(positionWS);
+                float4 beforPos1    = UnityWorldToClipPos(positionWS + normalWS * _OutlineWidth);
+                float4 afterPos0    = UnityWorldToClipPos(positionWS + normalize(positionWS - _WorldSpaceCameraPos) * _ZOffset);
+                float4 afterPos1    = afterPos0 + (beforPos1 - beforPos0);
+                o.pos = afterPos1;
 
                 return o;
             }

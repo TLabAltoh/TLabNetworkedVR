@@ -1,5 +1,8 @@
 using System.Text;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class TLabSyncGrabbable : TLabVRGrabbable
 {
@@ -462,3 +465,98 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if(TLabSyncClient.Instalce.SeatIndex == m_grabbed && m_grabbed != -1) GrabbLock(false);
     }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(TLabSyncGrabbable))]
+[CanEditMultipleObjects]
+
+public class TLabSyncGrabbableEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+
+        serializedObject.Update();
+
+        TLabSyncGrabbable grabbable = target as TLabSyncGrabbable;
+        TLabVRRotatable rotatable   = grabbable.gameObject.GetComponent<TLabVRRotatable>();
+
+        if (rotatable != null && GUILayout.Button("Initialize for Rotatable"))
+        {
+            grabbable.InitializeRotatable();
+            EditorUtility.SetDirty(grabbable);
+            EditorUtility.SetDirty(rotatable);
+        }
+
+        if(grabbable.EnableDivide == true && GUILayout.Button("Initialize for Devibable"))
+        {
+            // Grabbable
+            // Rigidbody‚ÌUseGravity‚ð–³Œø‰»‚·‚é
+            grabbable.m_enableSync = true;
+            grabbable.m_autoSync = false;
+            grabbable.m_locked = false;
+            grabbable.UseRigidbody(false, false);
+
+            if (grabbable.EnableDivide == true)
+            {
+                // If grabbable is enable devide
+                MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
+                if (meshFilter == null) grabbable.gameObject.AddComponent<MeshFilter>();
+            }
+            else
+            {
+                MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
+                if (meshFilter != null) Destroy(meshFilter);
+
+                MeshRenderer meshRenderer = grabbable.GetComponent<MeshRenderer>();
+                if (meshRenderer != null) Destroy(meshRenderer);
+            }
+
+            // SetLayerMask
+            grabbable.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
+
+            // Rotatable
+            if (rotatable == null) grabbable.gameObject.AddComponent<TLabSyncRotatable>();
+
+            EditorUtility.SetDirty(grabbable);
+            EditorUtility.SetDirty(rotatable);
+
+            // Childlen
+
+            foreach (Transform grabbableChildTransform in grabbable.gameObject.GetComponentsInChildren<Transform>())
+            {
+                if (grabbableChildTransform.gameObject == grabbable.gameObject) continue;
+                if (grabbableChildTransform.gameObject.activeSelf == false)     continue;
+
+                // Grabbable
+                TLabSyncGrabbable grabbableChild = grabbableChildTransform.gameObject.GetComponent<TLabSyncGrabbable>();
+                if (grabbableChild == null)
+                    grabbableChild = grabbableChildTransform.gameObject.gameObject.AddComponent<TLabSyncGrabbable>();
+
+                // SetLayerMask
+                grabbableChild.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
+
+                // Rotatable
+                grabbableChild.m_enableSync = true;
+                grabbableChild.m_autoSync = false;
+                grabbableChild.m_locked = false;
+                grabbableChild.UseRigidbody(false, false);
+
+                TLabSyncRotatable rotatableChild = grabbableChild.gameObject.GetComponent<TLabSyncRotatable>();
+                if (rotatableChild == null) rotatableChild = grabbableChild.gameObject.AddComponent<TLabSyncRotatable>();
+
+                // MeshCollider
+                MeshCollider meshCollider = grabbableChildTransform.gameObject.gameObject.GetComponent<MeshCollider>();
+                if (meshCollider == null)
+                    meshCollider = grabbableChildTransform.gameObject.gameObject.AddComponent<MeshCollider>();
+                meshCollider.enabled = false;
+
+                EditorUtility.SetDirty(grabbableChild);
+                EditorUtility.SetDirty(rotatable);
+            }
+        }
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+#endif
