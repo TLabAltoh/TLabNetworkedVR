@@ -8,9 +8,9 @@ Shader "TLab/TLabOutline"
         _Metallic ("Metallic", Range(0,1)) = 0.0
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         */
-        _OutlineColor("Outline Color", Color) = (0,0,0,1)
-        _OutlineWidth("Outline Width", Range(0, 0.1)) = .005
-        _ZOffset("Z Offset", Range(-0.5, 0.5)) = .0
+        _OutlineColor("Outline Color", Color) = (0,1,1,1)
+        _OutlineWidth("Outline Width", Range(0, 0.1)) = .025
+        _ZOffset("Z Offset", Range(-0.5, 0.5)) = .2
     }
 
     SubShader
