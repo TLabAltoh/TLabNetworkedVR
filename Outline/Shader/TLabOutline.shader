@@ -120,7 +120,7 @@ Shader "TLab/TLabOutline"
                 float4 beforPos0    = UnityWorldToClipPos(positionWS);
                 float4 beforPos1    = UnityWorldToClipPos(positionWS + normalWS * _OutlineWidth);
                 float4 afterPos0    = UnityWorldToClipPos(positionWS + normalize(positionWS - _WorldSpaceCameraPos) * _ZOffset);
-                float4 afterPos1    = afterPos0 + (beforPos1 - beforPos0);
+                float4 afterPos1    = afterPos0 + (beforPos1 - beforPos0) * beforPos0.w;
                 o.pos = afterPos1;
 
                 return o;
