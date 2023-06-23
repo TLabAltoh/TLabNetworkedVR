@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.SceneManagement;
 #endif
 
 #if UNITY_EDITOR
@@ -100,9 +99,7 @@ public class TLabOutlineManager : MonoBehaviour
                 meshRenderer.sharedMaterials = newMaterials;
             }
             else
-            {
                 AssetDatabase.CreateAsset(outline, path);
-            }
 
             TLabOutlineSelectable selectable    = obj.GetComponent<TLabOutlineSelectable>();
             if (selectable == null) selectable  = obj.AddComponent<TLabOutlineSelectable>();
