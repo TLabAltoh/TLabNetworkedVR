@@ -518,42 +518,49 @@ public class TLabSyncGrabbableEditor : Editor
             // Rotatable
             if (rotatable == null) grabbable.gameObject.AddComponent<TLabSyncRotatable>();
 
+            // MeshCollider
+            MeshCollider meshCollider = grabbable.gameObject.GetComponent<MeshCollider>();
+            if (meshCollider == null)
+                meshCollider = grabbable.gameObject.AddComponent<MeshCollider>();
+            meshCollider.enabled = true;
+
             EditorUtility.SetDirty(grabbable);
             EditorUtility.SetDirty(rotatable);
 
             // Childlen
 
-            foreach (Transform grabbableChildTransform in grabbable.gameObject.GetComponentsInChildren<Transform>())
-            {
-                if (grabbableChildTransform.gameObject == grabbable.gameObject) continue;
-                if (grabbableChildTransform.gameObject.activeSelf == false)     continue;
+            foreach (GameObject divideAnchor in grabbable.DivideAnchors)
+                foreach (Transform grabbableChildTransform in divideAnchor.GetComponentsInChildren<Transform>())
+                {
+                    if (grabbableChildTransform.gameObject == divideAnchor.gameObject)  continue;
+                    if (grabbableChildTransform.gameObject.activeSelf == false)         continue;
 
-                // Grabbable
-                TLabSyncGrabbable grabbableChild = grabbableChildTransform.gameObject.GetComponent<TLabSyncGrabbable>();
-                if (grabbableChild == null)
-                    grabbableChild = grabbableChildTransform.gameObject.gameObject.AddComponent<TLabSyncGrabbable>();
+                    // Grabbable
+                    TLabSyncGrabbable grabbableChild = grabbableChildTransform.gameObject.GetComponent<TLabSyncGrabbable>();
+                    if (grabbableChild == null)
+                        grabbableChild = grabbableChildTransform.gameObject.AddComponent<TLabSyncGrabbable>();
 
-                // SetLayerMask
-                grabbableChild.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
+                    // SetLayerMask
+                    grabbableChild.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
 
-                // Rotatable
-                grabbableChild.m_enableSync = true;
-                grabbableChild.m_autoSync = false;
-                grabbableChild.m_locked = false;
-                grabbableChild.UseRigidbody(false, false);
+                    // Rotatable
+                    grabbableChild.m_enableSync = true;
+                    grabbableChild.m_autoSync = false;
+                    grabbableChild.m_locked = false;
+                    grabbableChild.UseRigidbody(false, false);
 
-                TLabSyncRotatable rotatableChild = grabbableChild.gameObject.GetComponent<TLabSyncRotatable>();
-                if (rotatableChild == null) rotatableChild = grabbableChild.gameObject.AddComponent<TLabSyncRotatable>();
+                    TLabSyncRotatable rotatableChild = grabbableChild.gameObject.GetComponent<TLabSyncRotatable>();
+                    if (rotatableChild == null) rotatableChild = grabbableChild.gameObject.AddComponent<TLabSyncRotatable>();
 
-                // MeshCollider
-                MeshCollider meshCollider = grabbableChildTransform.gameObject.gameObject.GetComponent<MeshCollider>();
-                if (meshCollider == null)
-                    meshCollider = grabbableChildTransform.gameObject.gameObject.AddComponent<MeshCollider>();
-                meshCollider.enabled = false;
+                    // MeshCollider
+                    MeshCollider meshColliderChild = grabbableChildTransform.gameObject.gameObject.GetComponent<MeshCollider>();
+                    if (meshColliderChild == null)
+                        meshColliderChild = grabbableChildTransform.gameObject.gameObject.AddComponent<MeshCollider>();
+                    meshColliderChild.enabled = false;
 
-                EditorUtility.SetDirty(grabbableChild);
-                EditorUtility.SetDirty(rotatable);
-            }
+                    EditorUtility.SetDirty(grabbableChild);
+                    EditorUtility.SetDirty(rotatable);
+                }
         }
 
         serializedObject.ApplyModifiedProperties();

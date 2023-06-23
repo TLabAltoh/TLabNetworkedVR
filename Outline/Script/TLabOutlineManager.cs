@@ -1,6 +1,8 @@
 using UnityEngine;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 
 #if UNITY_EDITOR
@@ -48,43 +50,72 @@ public class TLabOutlineManager : MonoBehaviour
             }
             mesh.colors = softEdges;
 
-            string path     = m_savePathMesh + "/" + mesh.name + ".asset";
-            Mesh copyMesh   = GameObject.Instantiate(mesh);
-            Mesh asset      = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            string path         = m_savePathMesh + "/" + mesh.name + ".asset";
+            Mesh copyMesh       = GameObject.Instantiate(mesh);
+            string copyMeshName = copyMesh.name.ToString();
+            copyMesh.name       = copyMeshName.Substring(0, copyMeshName.Length - "(Clone)".Length);
+            Mesh asset          = AssetDatabase.LoadAssetAtPath<Mesh>(path);
 
             if (asset != null)
-                EditorUtility.CopySerialized(asset, copyMesh);
+            {
+                EditorUtility.CopySerialized(copyMesh, asset);
+                meshFilter.sharedMesh = asset;
+            }
             else
+            {
                 AssetDatabase.CreateAsset(copyMesh, path);
+                meshFilter.sharedMesh = copyMesh;
+            }
 
+            EditorUtility.SetDirty(meshFilter);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            meshFilter.sharedMesh = copyMesh;
         }
 
         MeshRenderer meshRenderer = obj.GetComponent<MeshRenderer>();
         if(meshRenderer != null)
         {
-            Material[] prevMaterials    = meshRenderer.sharedMaterials;
-            Material outline = new Material(m_outline);
-            outline.name = obj.name + "_Outline";
-            Material[] newMaterials     = new Material[prevMaterials.Length + 1];
-            for (int i = 0; i < prevMaterials.Length; i++) newMaterials[i] = prevMaterials[i];
-            newMaterials[newMaterials.Length - 1] = outline;
-            meshRenderer.sharedMaterials = newMaterials;
+            string materialSaveName = obj.name + "_Outline";
+
+            Material[] prevMaterials = meshRenderer.sharedMaterials;
+
+            List<Material> newMaterialList = new List<Material>();
+            for (int i = 0; i < prevMaterials.Length; i++)
+                if (prevMaterials[i].name != materialSaveName) newMaterialList.Add(prevMaterials[i]);
+
+            Material outline    = new Material(m_outline);
+            outline.name        = materialSaveName;
+            newMaterialList.Add(outline);
+
+            Material[] newMaterials         = newMaterialList.ToArray();
+            meshRenderer.sharedMaterials    = newMaterials;
 
             string path         = m_savePathMaterial + "/" + outline.name + ".mat";
             Material prevMat    = AssetDatabase.LoadAssetAtPath<Material>(path);
 
             if (prevMat != null)
-                EditorUtility.CopySerialized(prevMat, outline);
+            {
+                EditorUtility.CopySerialized(outline, prevMat);
+                newMaterials[newMaterials.Length - 1] = prevMat;
+                meshRenderer.sharedMaterials = newMaterials;
+            }
             else
+            {
                 AssetDatabase.CreateAsset(outline, path);
+            }
 
+            TLabOutlineSelectable selectable    = obj.GetComponent<TLabOutlineSelectable>();
+            if (selectable == null) selectable  = obj.AddComponent<TLabOutlineSelectable>();
+
+            selectable.OutlineMat = meshRenderer.sharedMaterials[meshRenderer.sharedMaterials.Length - 1];
+
+            EditorUtility.SetDirty(selectable);
+            EditorUtility.SetDirty(meshRenderer);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
+
+        EditorUtility.SetDirty(obj);
     }
 
     public void BakeVertexColor()
@@ -94,7 +125,11 @@ public class TLabOutlineManager : MonoBehaviour
             m_savePathMaterial == ""    ||
             m_savePathMaterial == null) return;
 
-        for (int i = 0; i < m_outlineTarget.Length; i++) BakeNormal(m_outlineTarget[i]);
+        for (int i = 0; i < m_outlineTarget.Length; i++)
+        {
+            foreach(Transform outlineTargetChild in m_outlineTarget[i].GetComponentsInChildren<Transform>())
+                if (outlineTargetChild != m_outlineTarget[i]) BakeNormal(outlineTargetChild.gameObject);
+        }
     }
 
     public void SelectMeshSavePath()
@@ -123,6 +158,8 @@ public class TLabOutlineManagerEditor : Editor
     {
         base.OnInspectorGUI();
 
+        serializedObject.Update();
+
         TLabOutlineManager manager = target as TLabOutlineManager;
 
         if (GUILayout.Button("Process"))
@@ -142,6 +179,8 @@ public class TLabOutlineManagerEditor : Editor
             manager.SelectMaterialSavePath();
             EditorUtility.SetDirty(manager);
         }
+
+        serializedObject.ApplyModifiedProperties();
     }
 }
 #endif

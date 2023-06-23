@@ -12,12 +12,20 @@ public class TLabOutlineSelectable : MonoBehaviour
         }
     }
 
-    private Material m_material;
+    public Material OutlineMat
+    {
+        set
+        {
+            m_material = value;
+        }
+    }
+
+    [SerializeField] private Material m_material;
     private bool m_selected = false;
 
     void Start()
     {
-        m_material = GetComponent<Renderer>().material;
+        m_material.SetFloat("_OutlineWidth", 0.0f);
     }
 
     private void Update()
