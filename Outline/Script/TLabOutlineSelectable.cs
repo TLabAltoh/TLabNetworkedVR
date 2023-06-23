@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class TLabOutlineSelectable : MonoBehaviour
 {
-    [SerializeField] [Range(0f, 0.1f)] private float m_outlineWidth = 0.025f;
+    [SerializeField] [Range(0f, 0.1f)] protected float m_outlineWidth = 0.025f;
 
-    public bool Selected
+    public virtual bool Selected
     {
         set
         {
@@ -12,23 +12,28 @@ public class TLabOutlineSelectable : MonoBehaviour
         }
     }
 
-    public Material OutlineMat
+    public virtual Material OutlineMat
     {
+        get
+        {
+            return m_material;
+        }
+
         set
         {
             m_material = value;
         }
     }
 
-    [SerializeField] private Material m_material;
-    private bool m_selected = false;
+    [SerializeField] protected Material m_material;
+    protected bool m_selected = false;
 
-    void Start()
+    protected virtual void Start()
     {
         m_material.SetFloat("_OutlineWidth", 0.0f);
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         m_material.SetFloat("_OutlineWidth", m_selected == true ? m_outlineWidth : 0.0f);
         m_selected = false;
