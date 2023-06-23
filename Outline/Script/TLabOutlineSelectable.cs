@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class TLabOutlineSelectable : MonoBehaviour
 {
+    [SerializeField] [Range(0f, 0.1f)] private float m_outlineWidth = 0.025f;
+
     public bool Selected
     {
         set
@@ -20,7 +22,7 @@ public class TLabOutlineSelectable : MonoBehaviour
 
     private void Update()
     {
-        m_material.SetFloat("_OutlineWidth", m_selected == true ? 0.025f : 0.0f);
+        m_material.SetFloat("_OutlineWidth", m_selected == true ? m_outlineWidth : 0.0f);
         m_selected = false;
     }
 }
