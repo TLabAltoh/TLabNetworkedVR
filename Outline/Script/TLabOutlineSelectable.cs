@@ -26,7 +26,8 @@ public class TLabOutlineSelectable : MonoBehaviour
     }
 
     [SerializeField] protected Material m_material;
-    protected bool m_selected = false;
+    protected bool m_selected       = false;
+    protected bool m_prevSelected   = false;
 
     protected virtual void Start()
     {
@@ -36,6 +37,7 @@ public class TLabOutlineSelectable : MonoBehaviour
     protected virtual void Update()
     {
         m_material.SetFloat("_OutlineWidth", m_selected == true ? m_outlineWidth : 0.0f);
-        m_selected = false;
+        m_prevSelected  = m_selected;
+        m_selected      = false;
     }
 }
