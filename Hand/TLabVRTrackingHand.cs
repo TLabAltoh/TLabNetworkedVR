@@ -47,6 +47,9 @@ public class TLabVRTrackingHand : MonoBehaviour
     private Vector3 m_prevRotateAnchor;
     private Vector3 m_currentRotateAnchor;
 
+    //
+    private const string thisName = "[tlabvrtrackinghand] ";
+
     [System.Serializable]
     public struct Gesture
     {

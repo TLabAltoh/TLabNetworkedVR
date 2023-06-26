@@ -29,8 +29,7 @@ public class TLabVRRotatable : MonoBehaviour
     protected virtual void Start()
     {
         m_grabbable = GetComponent<TLabVRGrabbable>();
-        if (m_grabbable == null)
-            Destroy(this);
+        if (m_grabbable == null) Destroy(this);
     }
 
     protected virtual void Update()

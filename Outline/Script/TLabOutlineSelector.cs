@@ -15,10 +15,7 @@ public class TLabOutlineSelector : MonoBehaviour
 
             TLabOutlineSelectable selectable = target.GetComponent<TLabOutlineSelectable>();
 
-            if (selectable == null)
-            {
-                return;
-            }
+            if (selectable == null) return;
 
             selectable.Selected = true;
         }
