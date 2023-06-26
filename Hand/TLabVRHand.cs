@@ -35,6 +35,9 @@ public class TLabVRHand : MonoBehaviour
     private GameObject m_raycastResult = null;
     private RaycastHit m_raycastHit;
 
+    //
+    private const string thisName = "[tlabvrhand] ";
+
     public GameObject RaycstResult
     {
         get
@@ -70,7 +73,7 @@ public class TLabVRHand : MonoBehaviour
         else
         {
             m_handInitialized = false;
-            Debug.LogError("The controller type is not properly selected. Select RTouch or LTouch.");
+            Debug.LogError(thisName + "The controller type is not properly selected. Select RTouch or LTouch.");
         }
     }
 

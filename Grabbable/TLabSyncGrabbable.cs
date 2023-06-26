@@ -27,6 +27,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private StringBuilder builder = new StringBuilder();
 
+    //
+    private const string thisName = "[tlabsyncgrabbable] ";
+
     private bool CanRbSync
     {
         get
@@ -106,7 +109,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         // ------> èdóÕåvéZÇóLå¯âª
         SetGravity((m_grabbed == -1 && active) ? true : false);
 
-        Debug.Log("tlabsyncgrabbable: rb allocated " + (m_grabbed == -1 && active) + "\t" + this.gameObject.name);
+        Debug.Log(thisName + "rb allocated " + (m_grabbed == -1 && active) + "\t" + this.gameObject.name);
     }
 
     public void ForceReleaseSelf()
@@ -149,7 +152,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         string json = JsonUtility.ToJson(obj);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
-        Debug.Log("tlabsyncgrabbable: " + "force release");
+        Debug.Log(thisName + "force release");
     }
 
     public void GrabbLockFromOutside(int index)
@@ -190,7 +193,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         string json = JsonUtility.ToJson(obj);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
-        Debug.Log("tlabsyncgrabbable: " + "grabb lock");
+        Debug.Log(thisName + "grabb lock");
     }
 
     public void SimpleLock(bool active)
@@ -221,7 +224,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         string json = JsonUtility.ToJson(obj);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
-        Debug.Log("tlabsyncgrabbable: " + "simple lock");
+        Debug.Log(thisName + "simple lock");
     }
 
     protected override void RbGripSwitch(bool grip)
@@ -425,7 +428,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 #if UNITY_EDITOR
     protected override void TestFunc()
     {
-        Debug.Log("After Override");
+        Debug.Log(thisName + "After Override");
     }
 #endif
 

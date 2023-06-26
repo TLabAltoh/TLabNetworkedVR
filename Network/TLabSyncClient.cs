@@ -205,6 +205,7 @@ public class TLabSyncClient : MonoBehaviour
     private Hashtable m_animators   = new Hashtable();
 
     private const string prefabName = "OVRGuestAnchor.";
+    private const string thisName   = "[tlabsyncclient] ";
 
     public Hashtable Grabbables
     {
@@ -260,7 +261,7 @@ public class TLabSyncClient : MonoBehaviour
         string json = JsonUtility.ToJson(obj);
         SendWsMessage(json);
 
-        Debug.Log("tlabsyncclient: " + "force reflesh");
+        Debug.Log(thisName + "force reflesh");
     }
 
     #region ConnectServer
@@ -289,21 +290,21 @@ public class TLabSyncClient : MonoBehaviour
                     TLabSyncClientConst.ACTION + ((int)WebAction.regist).ToString() +
                 "}";
 
-            Debug.Log("tlabsyncclient: " + json);
+            Debug.Log(thisName + json);
 
             SendWsMessage(json);
 
-            Debug.Log("tlabsyncclient: Connection open!");
+            Debug.Log(thisName + "Connection open!");
         };
 
         websocket.OnError += (e) =>
         {
-            Debug.Log("Error! " + e);
+            Debug.Log(thisName + "Error! " + e);
         };
 
         websocket.OnClose += (e) =>
         {
-            Debug.Log("tlabsyncclient: Connection closed!");
+            Debug.Log(thisName + "Connection closed!");
         };
 
         websocket.OnMessage += (bytes) =>
@@ -313,7 +314,7 @@ public class TLabSyncClient : MonoBehaviour
             TLabSyncJson obj = JsonUtility.FromJson<TLabSyncJson>(message);
 
 #if UNITY_EDITOR
-            Debug.Log("tlabsyncclient: OnMessage - " + message);
+            Debug.Log(thisName + "OnMessage - " + message);
 #endif
 
             if (obj.role == (int)WebRole.server)
@@ -401,7 +402,7 @@ public class TLabSyncClient : MonoBehaviour
 
                     foreach (TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestDisconnected(obj.seatIndex);
 
-                    Debug.Log("tlabsyncclient: guest disconncted . " + obj.seatIndex.ToString());
+                    Debug.Log(thisName + "guest disconncted . " + obj.seatIndex.ToString());
 
                     return;
                     #endregion

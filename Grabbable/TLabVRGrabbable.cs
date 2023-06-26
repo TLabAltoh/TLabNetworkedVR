@@ -91,6 +91,8 @@ public class TLabVRGrabbable : MonoBehaviour
 
     protected List<TLabCashTransform> m_cashTransforms = new List<TLabCashTransform>();
 
+    private const string thisName = "[tlabvrgrabbable] ";
+
     public bool Grabbed
     {
         get
@@ -176,7 +178,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
             MainParentGrabbStart();
 
-            Debug.Log("tlabvrhand: " + parent.ToString() + " mainParent added");
+            Debug.Log(thisName + parent.ToString() + " mainParent added");
             return true;
         }
         else if(m_subParent == null)
@@ -185,11 +187,11 @@ public class TLabVRGrabbable : MonoBehaviour
 
             SubParentGrabStart();
 
-            Debug.Log("tlabvrhand: " + parent.ToString() + " subParent added");
+            Debug.Log(thisName + parent.ToString() + " subParent added");
             return true;
         }
 
-        Debug.Log("cannot add parent");
+        Debug.Log(thisName + "cannot add parent");
         return false;
     }
 
@@ -204,7 +206,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
                 MainParentGrabbStart();
 
-                Debug.Log("tlabvrhand: " + "m_main released and m_sub added");
+                Debug.Log(thisName + "m_main released and m_sub added");
 
                 return true;
             }
@@ -215,7 +217,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
                 m_mainParent = null;
 
-                Debug.Log("tlabvrhand: " + "m_main released");
+                Debug.Log(thisName + "m_main released");
 
                 return true;
             }
@@ -226,7 +228,7 @@ public class TLabVRGrabbable : MonoBehaviour
 
             MainParentGrabbStart();
 
-            Debug.Log("tlabvrhand: m_sub released");
+            Debug.Log(thisName + "m_sub released");
 
             return true;
         }
@@ -412,7 +414,7 @@ public class TLabVRGrabbable : MonoBehaviour
 #if UNITY_EDITOR
     protected virtual void TestFunc()
     {
-        Debug.Log("Befor Override");
+        Debug.Log(thisName + "Befor Override");
     }
 #endif
 
