@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using NativeWebSocket;
@@ -68,26 +67,26 @@ public class TLabSyncJson
 
 public enum WebRole
 {
-    server,
-    host,
-    guest
+    SERVER,
+    HOST,
+    GUEST
 }
 
 public enum WebAction
 {
-    regist,
-    regect,
-    acept,
-    guestDisconnect,
-    guestParticipation,
-    allocateGravity,
-    grabbLock,
-    forceRelease,
-    divideGrabber,
-    syncTransform,
-    syncAnim,
-    reflesh,
-    customAction
+    REGIST,
+    REGECT,
+    ACEPT,
+    GUESTDISCONNECT,
+    GUESTPARTICIPATION,
+    ALLOCATEGRAVITY,
+    GRABBLOCK,
+    FORCERELEASE,
+    DIVIDEGRABBER,
+    SYNCTRANSFORM,
+    SYNCANIM,
+    REFLESH,
+    CUSTOMACTION
 }
 
 public enum WebAnimValueType
@@ -223,6 +222,14 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
+    public int SeatLength
+    {
+        get
+        {
+            return SEAT_LENGTH;
+        }
+    }
+
 #if UNITY_EDITOR
     public void SetServerAddr(string addr)
     {
@@ -240,9 +247,9 @@ public class TLabSyncClient : MonoBehaviour
         m_grabbables[name] = grabbable;
     }
 
-    public void AddSyncAnimator(string name, Animator animator)
+    public void AddSyncAnimator(string name, TLabSyncAnim syncAnim)
     {
-        m_animators[name] = animator;
+        m_animators[name] = syncAnim;
     }
 
     /// <summary>
@@ -254,8 +261,8 @@ public class TLabSyncClient : MonoBehaviour
     {
         TLabSyncJson obj = new TLabSyncJson
         {
-            role    = (int)WebRole.guest,
-            action  = (int)WebAction.reflesh,
+            role    = (int)WebRole.GUEST,
+            action  = (int)WebAction.REFLESH,
             active  = reloadWorldData
         };
         string json = JsonUtility.ToJson(obj);
@@ -286,8 +293,8 @@ public class TLabSyncClient : MonoBehaviour
 
             string json =
                 "{" +
-                    TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.host).ToString() : ((int)WebRole.guest).ToString()) + TLabSyncClientConst.COMMA +
-                    TLabSyncClientConst.ACTION + ((int)WebAction.regist).ToString() +
+                    TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
+                    TLabSyncClientConst.ACTION + ((int)WebAction.REGIST).ToString() +
                 "}";
 
             Debug.Log(thisName + json);
@@ -317,9 +324,9 @@ public class TLabSyncClient : MonoBehaviour
             Debug.Log(thisName + "OnMessage - " + message);
 #endif
 
-            if (obj.role == (int)WebRole.server)
+            if (obj.role == (int)WebRole.SERVER)
             {
-                if (obj.action == (int)WebAction.acept)
+                if (obj.action == (int)WebAction.ACEPT)
                 {
                     #region
                     m_seatIndex = obj.seatIndex;
@@ -364,14 +371,14 @@ public class TLabSyncClient : MonoBehaviour
 
                     // Add animators to a hash table for fast lookup by name
 
-                    Animator[] animators = FindObjectsOfType<Animator>();
-                    foreach (Animator animator in animators)
-                        m_animators[animator.gameObject.name] = animator;
+                    TLabSyncAnim[] syncAnims = FindObjectsOfType<TLabSyncAnim>();
+                    foreach (TLabSyncAnim syncAnim in syncAnims)
+                        m_animators[syncAnim.gameObject.name] = syncAnim;
 
                     return;
                     #endregion
                 }
-                else if (obj.action == (int)WebAction.guestDisconnect)
+                else if (obj.action == (int)WebAction.GUESTDISCONNECT)
                 {
                     #region
                     string guestName = prefabName + obj.seatIndex.ToString();
@@ -407,7 +414,7 @@ public class TLabSyncClient : MonoBehaviour
                     return;
                     #endregion
                 }
-                else if (obj.action == (int)WebAction.guestParticipation)
+                else if (obj.action == (int)WebAction.GUESTPARTICIPATION)
                 {
                     #region
                     Vector3 respownPos      = new Vector3(0.0f, -0.5f, 0.0f);
@@ -446,12 +453,12 @@ public class TLabSyncClient : MonoBehaviour
                     // 参加時のコールバック
                     foreach (TLabSyncClientCustomCallback callback in m_customCallbacks) callback.OnGuestParticipated(obj.seatIndex);
 
-                    Debug.Log("tlabwebsokcet: guest participated . " + obj.seatIndex.ToString());
+                    Debug.Log(thisName + "guest participated . " + obj.seatIndex.ToString());
 
                     return;
                     #endregion
                 }
-                else if (obj.action == (int)WebAction.allocateGravity)
+                else if (obj.action == (int)WebAction.ALLOCATEGRAVITY)
                 {
                     #region
                     WebObjectInfo webTransform  = obj.transform;
@@ -464,7 +471,7 @@ public class TLabSyncClient : MonoBehaviour
             }
 
             #region Default
-            if (obj.action == (int)WebAction.syncTransform)
+            if (obj.action == (int)WebAction.SYNCTRANSFORM)
             {
                 WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
@@ -475,7 +482,7 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if (obj.action == (int)WebAction.grabbLock)
+            else if (obj.action == (int)WebAction.GRABBLOCK)
             {
                 WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
@@ -486,7 +493,7 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if (obj.action == (int)WebAction.forceRelease)
+            else if (obj.action == (int)WebAction.FORCERELEASE)
             {
                 WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
@@ -497,7 +504,7 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if (obj.action == (int)WebAction.divideGrabber)
+            else if (obj.action == (int)WebAction.DIVIDEGRABBER)
             {
                 WebObjectInfo webTransform  = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
@@ -508,21 +515,18 @@ public class TLabSyncClient : MonoBehaviour
 
                 return;
             }
-            else if (obj.action == (int)WebAction.syncAnim)
+            else if (obj.action == (int)WebAction.SYNCANIM)
             {
                 WebAnimInfo webAnimator = obj.animator;
-                Animator animator       = m_animators[webAnimator.id] as Animator;
+                TLabSyncAnim syncAnim   = m_animators[webAnimator.id] as TLabSyncAnim;
 
-                if (animator == null) return;
+                if (syncAnim == null) return;
 
-                if (webAnimator.type == (int)WebAnimValueType.typeFloat) animator.SetFloat(webAnimator.parameter, webAnimator.floatVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeInt) animator.SetInteger(webAnimator.parameter, webAnimator.intVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeBool) animator.SetBool(webAnimator.parameter, webAnimator.boolVal);
-                else if (webAnimator.type == (int)WebAnimValueType.typeTrigger) animator.SetTrigger(webAnimator.parameter);
+                syncAnim.SyncAnimFromOutside(webAnimator);
 
                 return;
             }
-            else if (obj.action == (int)WebAction.customAction)
+            else if (obj.action == (int)WebAction.CUSTOMACTION)
             {
                 m_customCallbacks[obj.customIndex].OnMessage(obj.custom);
 

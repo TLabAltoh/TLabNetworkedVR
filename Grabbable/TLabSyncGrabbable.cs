@@ -142,8 +142,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role        = (int)WebRole.guest,
-            action      = (int)WebAction.forceRelease,
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.FORCERELEASE,
             transform   = new WebObjectInfo
             {
                 id = this.gameObject.name
@@ -182,8 +182,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role        = (int)WebRole.guest,
-            action      = (int)WebAction.grabbLock,
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.GRABBLOCK,
             seatIndex   = active ? TLabSyncClient.Instalce.SeatIndex : -1,
             transform   = new WebObjectInfo
             {
@@ -213,8 +213,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role        = (int)WebRole.guest,
-            action      = (int)WebAction.grabbLock,
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.GRABBLOCK,
             seatIndex   = active ? -2 : -1,
             transform   = new WebObjectInfo
             {
@@ -253,11 +253,11 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         builder.Append("{");
             builder.Append(TLabSyncClientConst.ROLE);
-            builder.Append(((int)WebRole.guest).ToString());
+            builder.Append(((int)WebRole.GUEST).ToString());
             builder.Append(TLabSyncClientConst.COMMA);
             
             builder.Append(TLabSyncClientConst.ACTION);
-            builder.Append(((int)WebAction.syncTransform).ToString());
+            builder.Append(((int)WebAction.SYNCTRANSFORM).ToString());
             builder.Append(TLabSyncClientConst.COMMA);
             
             builder.Append(TLabSyncClientConst.TRANSFORM);
@@ -401,8 +401,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncJson obj = new TLabSyncJson
         {
-            role        = (int)WebRole.guest,
-            action      = (int)WebAction.divideGrabber,
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.DIVIDEGRABBER,
             active      = active,
             transform   = new WebObjectInfo
             {
