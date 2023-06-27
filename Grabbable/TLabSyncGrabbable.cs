@@ -410,6 +410,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
             }
         };
         string json = JsonUtility.ToJson(obj);
+        TLabSyncJson parse = JsonUtility.FromJson<TLabSyncJson>(json);
         TLabSyncClient.Instalce.SendWsMessage(json);
 
         return result;
