@@ -302,7 +302,11 @@ public class TLabVRGrabbable : MonoBehaviour
 
         //
         List<MeshFilter> meshFilterList = new List<MeshFilter>();
-        for (int i = 1; i < meshFilters.Length; i++) meshFilterList.Add(meshFilters[i]);
+        for (int i = 1; i < meshFilters.Length; i++)
+        {
+            if (meshFilters[i] == meshFilter) continue;
+            meshFilterList.Add(meshFilters[i]);
+        }
 
         CombineInstance[] combine = new CombineInstance[meshFilterList.Count];
 
