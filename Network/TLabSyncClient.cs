@@ -442,8 +442,8 @@ public class TLabSyncClient : MonoBehaviour
 
                     if (m_guestHead != null)
                     {
-                        GameObject guestHead    = Instantiate(m_guestHead, respownPos, respownRot);
-                        guestHead.name          = guestName + ".Head";
+                        GameObject guestHead = Instantiate(m_guestHead, respownPos, respownRot);
+                        guestHead.name = guestName + ".Head";
 
                         m_grabbables[guestHead.name] = guestHead.GetComponent<TLabSyncGrabbable>();
                     }
