@@ -17,6 +17,14 @@ public class TLabSyncAnim : MonoBehaviour
 
     private const string m_thisName = "[tlabsyncanim] ";
 
+    public Animator animator
+    {
+        get
+        {
+            return animator;
+        }
+    }
+
     public void SyncAnim()
     {
         foreach(TLabAnimParameterInfo parameter in m_parameters)
