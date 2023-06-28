@@ -466,7 +466,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     private void OnDestroy()
     {
         // このオブジェクトをロックしているのが自分だったら解除する
-        if(TLabSyncClient.Instalce.SeatIndex == m_grabbed && m_grabbed != -1) GrabbLock(false);
+        if(TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
+            m_grabbed != -1 &&
+            m_grabbed != -2) GrabbLock(false);
     }
 }
 
