@@ -1,11 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
+#if UNITY_EDITOR
 public class TLabVRHandManager : MonoBehaviour
 {
     #region
@@ -106,7 +105,7 @@ public class TLabVRHandManager : MonoBehaviour
     }
     #endregion
 
-    [SerializeField] OVRProjectConfig m_projectConfig;
+    [SerializeField] private OVRProjectConfig m_projectConfig;
 
     [SerializeField] private TLabOVRInputModule m_inputModule;
 
@@ -132,7 +131,6 @@ public class TLabVRHandManager : MonoBehaviour
     }
 }
 
-#if UNITY_EDITOR
 [CustomEditor(typeof(TLabVRHandManager))]
 [CanEditMultipleObjects]
 public class TLabVRHandManagerEditor: Editor

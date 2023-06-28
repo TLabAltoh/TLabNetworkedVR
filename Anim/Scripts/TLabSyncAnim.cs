@@ -63,10 +63,21 @@ public class TLabSyncAnim : MonoBehaviour
 
     public void SyncAnimFromOutside(WebAnimInfo webAnimator)
     {
-        if (webAnimator.type == (int)WebAnimValueType.typeFloat)        SetFloat(webAnimator.parameter, webAnimator.floatVal);
-        else if (webAnimator.type == (int)WebAnimValueType.typeInt)     SetInteger(webAnimator.parameter, webAnimator.intVal);
-        else if (webAnimator.type == (int)WebAnimValueType.typeBool)    SetBool(webAnimator.parameter, webAnimator.boolVal);
-        else if (webAnimator.type == (int)WebAnimValueType.typeTrigger) SetTrigger(webAnimator.parameter);
+        switch (webAnimator.type)
+        {
+            case (int)WebAnimValueType.typeFloat:
+                SetFloat(webAnimator.parameter, webAnimator.floatVal);
+                break;
+            case (int)WebAnimValueType.typeInt:
+                SetInteger(webAnimator.parameter, webAnimator.intVal);
+                break;
+            case (int)WebAnimValueType.typeBool:
+                SetBool(webAnimator.parameter, webAnimator.boolVal);
+                break;
+            case (int)WebAnimValueType.typeTrigger:
+                SetTrigger(webAnimator.parameter);
+                break;
+        }
     }
 
     #region SetParameter
