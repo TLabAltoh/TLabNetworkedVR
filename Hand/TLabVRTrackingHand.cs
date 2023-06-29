@@ -57,6 +57,14 @@ public class TLabVRTrackingHand : MonoBehaviour
         public List<Vector3> fingerDatas;
     }
 
+    public bool SkeltonInitialized
+    {
+        get
+        {
+            return m_skeltonInitialized;
+        }
+    }
+
     public TLabVRGrabbable CurrentGrabbable
     {
         get
@@ -98,7 +106,8 @@ public class TLabVRTrackingHand : MonoBehaviour
         g.name      = "New Gesture";
 
         List<Vector3> data = new List<Vector3>();
-        foreach(var bone in m_fingerBones) data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
+        foreach(var bone in m_fingerBones)
+            data.Add(m_skeleton.transform.InverseTransformPoint(bone.Transform.position));
 
         g.fingerDatas = data;
         m_gestures.Add(g);
@@ -110,13 +119,13 @@ public class TLabVRTrackingHand : MonoBehaviour
     /// <returns></returns>
     private string DetectGesture()
     {
-        string result = null;
-        float currentMin = Mathf.Infinity;
+        string result       = null;
+        float currentMin    = Mathf.Infinity;
 
         foreach(var gesture in m_gestures)
         {
-            float sumDistance = 0.0f;
-            bool isDiscarded = false;
+            float sumDistance   = 0.0f;
+            bool isDiscarded    = false;
             for(int i = 0; i < m_fingerBones.Count; i++)
             {
                 Vector3 currentData = m_skeleton.transform.InverseTransformPoint(m_fingerBones[i].Transform.position);

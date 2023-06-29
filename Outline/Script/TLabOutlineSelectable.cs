@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TLabOutlineSelectable : MonoBehaviour
@@ -31,6 +33,28 @@ public class TLabOutlineSelectable : MonoBehaviour
 
     protected virtual void Start()
     {
+        string name = this.gameObject.name;
+        string num = name[name.Length - 1].ToString();
+        int anchorIndex = -1;
+        Int32.TryParse(num, out anchorIndex);
+
+        if(anchorIndex != TLabSyncClient.Instalce.SeatIndex)
+        {
+            Material copy               = new Material(m_material);
+            MeshRenderer meshRenderer   = this.GetComponent<MeshRenderer>();
+            if(meshRenderer != null)
+            {
+                Material[] materials        = meshRenderer.sharedMaterials;
+                List<Material> materialList = new List<Material>();
+                foreach(Material material in materials)
+                    if (material != m_material) materialList.Add(material);
+                materialList.Add(copy);
+
+                m_material = copy;
+                meshRenderer.sharedMaterials = materialList.ToArray();
+            }
+        }
+
         m_material.SetFloat("_OutlineWidth", 0.0f);
     }
 
