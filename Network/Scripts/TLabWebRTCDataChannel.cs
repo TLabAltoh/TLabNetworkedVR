@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Unity.WebRTC;
 using NativeWebSocket;
 
@@ -41,8 +44,6 @@ public class TLabRTCSigJson
 
 public class TLabWebRTCDataChannel : MonoBehaviour
 {
-    private DelegateOnMessage onDataChannelMessage;
-
     private Dictionary<string, RTCPeerConnection>       peerConnectionDic   = new Dictionary<string, RTCPeerConnection>();
     private Dictionary<string, RTCDataChannel>          dataChannelDic      = new Dictionary<string, RTCDataChannel>();
     private Dictionary<string, List<RTCIceCandidate>>   candidateDic        = new Dictionary<string, List<RTCIceCandidate>>();
@@ -51,8 +52,17 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private const string thisName = "[tlabwebrtc] ";
 
+    [SerializeField] private string serverAddr = "ws://localhost:3001";
+    [SerializeField] private string userID;
     [SerializeField] private string roomName;
-    [SerializeField] private UnityEvent<string, byte[]> onMessage;
+    [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
+
+#if UNITY_EDITOR
+    public void SetSignalingServerAddr(string addr)
+    {
+        serverAddr = addr;
+    }
+#endif
 
     #region ICE Candidate
     private void AddIceCandidate(string src, TLabRTCICE tlabIce)
@@ -181,20 +191,20 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
             RTCDataChannelInit conf = new RTCDataChannelInit();
             dataChannelDic[id] = peerConnectionDic[id].CreateDataChannel("data", conf);
-            dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(id, bytes); };
+            dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(userID, id, bytes); };
             dataChannelDic[id].OnOpen       = ()    => { };
-            dataChannelDic[id].OnClose      = ()    => { dataChannelDic.Remove(id); };
+            dataChannelDic[id].OnClose      = ()    => { };
         }
         else
         {
             peerConnectionDic[id].OnDataChannel = channel =>
             {
-                Debug.Log(thisName + "dataChannel created on offert peerConnection");
+                Debug.Log(thisName + "dataChannel created on offer peerConnection");
 
                 dataChannelDic[id] = channel;
-                dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(id, bytes); };
+                dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(userID, id, bytes); };
                 dataChannelDic[id].OnOpen       = ()    => { };
-                dataChannelDic[id].OnClose      = ()    => { dataChannelDic.Remove(id); };
+                dataChannelDic[id].OnClose      = ()    => { };
             };
         }
     }
@@ -339,22 +349,25 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         peerConnectionDic.Remove(dst);
     }
 
-    public void Join()
+    public void Join(string userID)
     {
+        this.userID = userID;
         SendWsMeg(TLabRTCSigAction.JOIN, null, null, null);
     }
 
-    public void SendRTCMsg(string message)
+    public void SendRTCMsg(byte[] bytes)
     {
-        foreach(RTCDataChannel dataChannel in dataChannelDic.Values) dataChannel.Send(message);
+        foreach(RTCDataChannel dataChannel in dataChannelDic.Values) dataChannel.Send(bytes);
     }
 
-    public async void SendWsMeg(TLabRTCSigAction action, TLabRTCDesc desc, TLabRTCICE ice, string dst)
+    public async void SendWsMeg(
+        TLabRTCSigAction action,
+        TLabRTCDesc desc, TLabRTCICE ice, string dst)
     {
         if (m_websocket.State == WebSocketState.Open)
         {
             TLabRTCSigJson obj  = new TLabRTCSigJson();
-            obj.src     = this.gameObject.name;
+            obj.src     = userID;
             obj.room    = roomName;
             obj.dst     = dst;
             obj.action  = (int)action;
@@ -397,7 +410,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
         Debug.Log(thisName + "connect to signaling server start");
 
-        m_websocket = new WebSocket("ws://localhost:3001");
+        m_websocket = new WebSocket(serverAddr);
 
         m_websocket.OnOpen += () =>
         {
@@ -442,3 +455,20 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         foreach (RTCPeerConnection peerConnection in peerConnectionDic.Values) peerConnection.Close();
     }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(TLabWebRTCDataChannel))]
+[CanEditMultipleObjects]
+
+public class TLabWebRTCDataChannelEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+
+        serializedObject.Update();
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+#endif

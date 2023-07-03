@@ -244,6 +244,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return base.AddParent(parent);
     }
 
+    #region SyncTransform
     private unsafe void LongCopy(byte* src, byte* dst, int count)
     {
         // https://github.com/neuecc/MessagePack-CSharp/issues/117
@@ -282,6 +283,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_enableSync == false) return;
 
+        #region unsageコードを使用したパケットの生成
+
         // transform
         // (3 + 4 + 3) * 4 = 40 byte
 
@@ -304,18 +307,30 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         rtcTransform[9] = this.transform.localScale.z;
 
         byte[] id       = Convert.FromBase64String(this.gameObject.name);
-        byte[] packet   = new byte[1 + name.Length + 40];
+        byte[] packet   = new byte[1 + name.Length + rtcTransform.Length * sizeof(float)];
 
         packet[0] = (byte)name.Length;
+
+        int offset  = 1 + name.Length;
+        int dataLen = rtcTransform.Length * sizeof(float);
 
         unsafe
         {
             // id
             fixed (byte* iniP = packet, iniD = id)
-            {
-                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + (1 + name.Length); pt++, pd++) *pt = *pd;
-            }
+                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + offset; pt++, pd++) *pt = *pd;
+
+            // transform
+            fixed (byte*  iniP = packet)
+            fixed (float* iniD = &(rtcTransform[0]))
+                for (byte* pt = iniP + offset, pd = (byte*)iniD; pt < iniP + offset + dataLen; pt++, pd++) *pt = *pd;
         }
+
+        #endregion unsageコードを使用したパケットの生成
+
+        TLabSyncClient.Instalce.SendRTCMessage(packet);
+
+        m_isSyncFromOutside = false;
     }
 
     /// <summary>
@@ -449,6 +464,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         m_isSyncFromOutside = false;
     }
+    #endregion SyncTransform
 
     public void OnDevideButtonClick()
     {
@@ -531,13 +547,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 UpdatePosition();
             }
 
-            SyncTransform();
+            SyncRTCTransform();
         }
         else
         {
             m_scaleInitialDistance = -1.0f;
 
-            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncTransform();
+            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncRTCTransform();
         }
     }
 

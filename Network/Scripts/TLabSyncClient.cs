@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
@@ -158,6 +159,7 @@ public class TLabSyncClientCustomCallback
     [SerializeField] private UnityEvent<int> onGuestDisconnected;
 }
 
+[RequireComponent(typeof(TLabWebRTCDataChannel))]
 public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
@@ -246,6 +248,7 @@ public class TLabSyncClient : MonoBehaviour
         return m_guestTable[index];
     }
 
+    #region AddSyncTarget
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
     {
         m_grabbables[name] = grabbable;
@@ -255,6 +258,7 @@ public class TLabSyncClient : MonoBehaviour
     {
         m_animators[name] = syncAnim;
     }
+    #endregion AddSyncTarget
 
     /// <summary>
     /// - Grabber‚Ìrigidbody‚ÌÄŠ„‚è“–‚Ä
@@ -380,7 +384,7 @@ public class TLabSyncClient : MonoBehaviour
                         m_animators[syncAnim.gameObject.name] = syncAnim;
 
                     // Connect to signaling server
-                    dataChannel.Join();
+                    dataChannel.Join(this.gameObject.name + "_" + m_seatIndex.ToString());
 
                     return;
                     #endregion
@@ -574,6 +578,94 @@ public class TLabSyncClient : MonoBehaviour
         ConnectServerAsync();
     }
 
+    #region RTCMessage
+    private unsafe void LongCopy(byte* src, byte* dst, int count)
+    {
+        // https://github.com/neuecc/MessagePack-CSharp/issues/117
+
+        while (count >= 8)
+        {
+            *(ulong*)dst = *(ulong*)src;
+            dst += 8;
+            src += 8;
+            count -= 8;
+        }
+        if (count >= 4)
+        {
+            *(uint*)dst = *(uint*)src;
+            dst += 4;
+            src += 4;
+            count -= 4;
+        }
+        if (count >= 2)
+        {
+            *(ushort*)dst = *(ushort*)src;
+            dst += 2;
+            src += 2;
+            count -= 2;
+        }
+        if (count >= 1)
+        {
+            *dst = *src;
+        }
+    }
+
+    /// <summary>
+    /// WebRTC
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="bytes"></param>
+    public void OnRTCMessage(string dst, string src, byte[] bytes)
+    {
+        int offset  = bytes[0];
+        int dataLen = bytes.Length - offset;
+
+        byte[] nameBytes = new byte[offset];
+
+        unsafe
+        {
+            fixed (byte* iniP = nameBytes, iniD = bytes)
+                for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
+        }
+
+        string targetName = Convert.ToBase64String(nameBytes);
+
+        TLabSyncGrabbable grabbable = m_grabbables[targetName] as TLabSyncGrabbable;
+
+        if (grabbable == null) return;
+
+        unsafe
+        {
+            fixed(byte* iniP = bytes)
+            {
+                byte* pt = iniP + offset;
+
+                WebObjectInfo webTransform = new WebObjectInfo
+                {
+                    position    = new WebVector3 { x = *pt++, y = *pt++, z = *pt++ },
+                    rotation    = new WebVector4 { x = *pt++, y = *pt++, z = *pt++, w = *pt++},
+                    scale       = new WebVector3 { x = *pt++, y = *pt++, z = *pt++ }
+                };
+
+                grabbable.SyncFromOutside(webTransform);
+            }
+        }
+    }
+
+    /// <summary>
+    /// WebRTC
+    /// </summary>
+    /// <param name="bytes"></param>
+    public void SendRTCMessage(byte[] bytes)
+    {
+        dataChannel.SendRTCMsg(bytes);
+    }
+    #endregion RTCMessage
+
+    /// <summary>
+    /// Websocket
+    /// </summary>
+    /// <param name="json"></param>
     public async void SendWsMessage(string json)
     {
         if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
@@ -582,6 +674,8 @@ public class TLabSyncClient : MonoBehaviour
     void Awake()
     {
         Instalce = this;
+
+        if(dataChannel == null) dataChannel = this.gameObject.GetComponent<TLabWebRTCDataChannel>();
     }
 
     void Update()

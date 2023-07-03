@@ -1,12 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 public class TLabWebRTCDataChannelTest : MonoBehaviour
 {
-    public void OnMessage(string src, byte[] bytes)
+    [SerializeField] TLabWebRTCDataChannel dataChannel;
+
+    public void Join(string id)
     {
-        string receive = System.Text.Encoding.UTF8.GetString(bytes);
-        Debug.Log("receive: " + receive);
+        dataChannel.Join(id);
+    }
+
+    public void SendMessageTest(string message)
+    {
+        dataChannel.SendRTCMsg(Encoding.UTF8.GetBytes(message));
+    }
+
+    public void OnMessage(string dst, string src, byte[] bytes)
+    {
+        string receive = Encoding.UTF8.GetString(bytes);
+        Debug.Log(src + " ===> " + dst + ": " + receive + ", " + "len: " + bytes.Length.ToString());
     }
 }
