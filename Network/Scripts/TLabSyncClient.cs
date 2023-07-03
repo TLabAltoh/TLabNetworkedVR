@@ -189,6 +189,10 @@ public class TLabSyncClient : MonoBehaviour
     [SerializeField] private Transform m_hostAnchor;
     [SerializeField] private Transform[] m_guestAnchors;
 
+    [Tooltip("WebRTCDataChannel")]
+    [Header("WebRTCDataChannel")]
+    [SerializeField] private TLabWebRTCDataChannel dataChannel;
+
     [Tooltip("カスタムメッセージのコールバック")]
     [Header("Custom Event")]
     [SerializeField] private TLabSyncClientCustomCallback[] m_customCallbacks;
@@ -374,6 +378,9 @@ public class TLabSyncClient : MonoBehaviour
                     TLabSyncAnim[] syncAnims = FindObjectsOfType<TLabSyncAnim>();
                     foreach (TLabSyncAnim syncAnim in syncAnims)
                         m_animators[syncAnim.gameObject.name] = syncAnim;
+
+                    // Connect to signaling server
+                    dataChannel.Join();
 
                     return;
                     #endregion

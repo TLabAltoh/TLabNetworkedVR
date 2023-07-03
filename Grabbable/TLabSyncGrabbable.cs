@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -243,6 +244,83 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return base.AddParent(parent);
     }
 
+    private unsafe void LongCopy(byte* src, byte* dst, int count)
+    {
+        // https://github.com/neuecc/MessagePack-CSharp/issues/117
+
+        while (count >= 8)
+        {
+            *(ulong*)dst = *(ulong*)src;
+            dst += 8;
+            src += 8;
+            count -= 8;
+        }
+        if (count >= 4)
+        {
+            *(uint*)dst = *(uint*)src;
+            dst += 4;
+            src += 4;
+            count -= 4;
+        }
+        if (count >= 2)
+        {
+            *(ushort*)dst = *(ushort*)src;
+            dst += 2;
+            src += 2;
+            count -= 2;
+        }
+        if (count >= 1)
+        {
+            *dst = *src;
+        }
+    }
+
+    /// <summary>
+    /// WebRTC
+    /// </summary>
+    public void SyncRTCTransform()
+    {
+        if (m_enableSync == false) return;
+
+        // transform
+        // (3 + 4 + 3) * 4 = 40 byte
+
+        // id
+        // 1 + (...)
+
+        float[] rtcTransform = new float[10];
+
+        rtcTransform[0] = this.transform.position.x;
+        rtcTransform[1] = this.transform.position.y;
+        rtcTransform[2] = this.transform.position.z;
+
+        rtcTransform[3] = this.transform.rotation.x;
+        rtcTransform[4] = this.transform.rotation.y;
+        rtcTransform[5] = this.transform.rotation.z;
+        rtcTransform[6] = this.transform.rotation.w;
+
+        rtcTransform[7] = this.transform.localScale.x;
+        rtcTransform[8] = this.transform.localScale.y;
+        rtcTransform[9] = this.transform.localScale.z;
+
+        byte[] id       = Convert.FromBase64String(this.gameObject.name);
+        byte[] packet   = new byte[1 + name.Length + 40];
+
+        packet[0] = (byte)name.Length;
+
+        unsafe
+        {
+            // id
+            fixed (byte* iniP = packet, iniD = id)
+            {
+                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + (1 + name.Length); pt++, pd++) *pt = *pd;
+            }
+        }
+    }
+
+    /// <summary>
+    /// WebSocket
+    /// </summary>
     public void SyncTransform()
     {
         if (m_enableSync == false) return;

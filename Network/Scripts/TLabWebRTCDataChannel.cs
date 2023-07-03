@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using Unity.WebRTC;
 using NativeWebSocket;
 
@@ -31,6 +32,7 @@ public class TLabRTCDesc
 public class TLabRTCSigJson
 {
     public int          action;
+    public string       room;
     public string       src;
     public string       dst;
     public TLabRTCDesc  desc;
@@ -39,7 +41,7 @@ public class TLabRTCSigJson
 
 public class TLabWebRTCDataChannel : MonoBehaviour
 {
-    private DelegateOnMessage       onDataChannelMessage;
+    private DelegateOnMessage onDataChannelMessage;
 
     private Dictionary<string, RTCPeerConnection>       peerConnectionDic   = new Dictionary<string, RTCPeerConnection>();
     private Dictionary<string, RTCDataChannel>          dataChannelDic      = new Dictionary<string, RTCDataChannel>();
@@ -48,6 +50,9 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     private WebSocket m_websocket;
 
     private const string thisName = "[tlabwebrtc] ";
+
+    [SerializeField] private string roomName;
+    [SerializeField] private UnityEvent<string, byte[]> onMessage;
 
     #region ICE Candidate
     private void AddIceCandidate(string src, TLabRTCICE tlabIce)
@@ -149,37 +154,48 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     #region Signaling
     private void CreatePeerConnection(string id, bool call)
     {
-        if (peerConnectionDic.ContainsKey(id) == false)
+        if (peerConnectionDic.ContainsKey(id) == true)
         {
-            Debug.Log(thisName + "create new peerConnection start");
+            peerConnectionDic[id].Close();
+            peerConnectionDic[id] = null;
+            peerConnectionDic.Remove(id);
+        }
 
-            RTCConfiguration configuration  = GetSelectedSdpSemantics();
-            peerConnectionDic[id]           = new RTCPeerConnection(ref configuration);
-            peerConnectionDic[id].OnIceCandidate        = candidate => { OnIceCandidate(id, candidate); };
-            peerConnectionDic[id].OnIceConnectionChange = state     => { OnIceConnectionChange(state); };
+        if(dataChannelDic.ContainsKey(id) == true)
+        {
+            dataChannelDic[id].Close();
+            dataChannelDic[id] = null;
+            dataChannelDic.Remove(id);
+        }
 
-            if(call == true)
+        Debug.Log(thisName + "create new peerConnection start");
+
+        RTCConfiguration configuration  = GetSelectedSdpSemantics();
+        peerConnectionDic[id]           = new RTCPeerConnection(ref configuration);
+        peerConnectionDic[id].OnIceCandidate            = candidate => { OnIceCandidate(id, candidate); };
+        peerConnectionDic[id].OnIceConnectionChange     = state     => { OnIceConnectionChange(state); };
+
+        if(call == true)
+        {
+            Debug.Log(thisName + "create new dataChennel start");
+
+            RTCDataChannelInit conf = new RTCDataChannelInit();
+            dataChannelDic[id] = peerConnectionDic[id].CreateDataChannel("data", conf);
+            dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(id, bytes); };
+            dataChannelDic[id].OnOpen       = ()    => { };
+            dataChannelDic[id].OnClose      = ()    => { dataChannelDic.Remove(id); };
+        }
+        else
+        {
+            peerConnectionDic[id].OnDataChannel = channel =>
             {
-                Debug.Log(thisName + "create new dataChennel start");
+                Debug.Log(thisName + "dataChannel created on offert peerConnection");
 
-                RTCDataChannelInit conf = new RTCDataChannelInit();
-                dataChannelDic[id] = peerConnectionDic[id].CreateDataChannel("data", conf);
-                dataChannelDic[id].OnMessage    = onDataChannelMessage;
-                dataChannelDic[id].OnOpen       = () => { };
-                dataChannelDic[id].OnClose      = () => { };
-            }
-            else
-            {
-                peerConnectionDic[id].OnDataChannel = channel =>
-                {
-                    Debug.Log(thisName + "dataChannel created on offert peerConnection");
-
-                    dataChannelDic[id] = channel;
-                    dataChannelDic[id].OnMessage    = onDataChannelMessage;
-                    dataChannelDic[id].OnOpen       = () => { };
-                    dataChannelDic[id].OnClose      = () => { };
-                };
-            }
+                dataChannelDic[id] = channel;
+                dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(id, bytes); };
+                dataChannelDic[id].OnOpen       = ()    => { };
+                dataChannelDic[id].OnClose      = ()    => { dataChannelDic.Remove(id); };
+            };
         }
     }
 
@@ -323,6 +339,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         peerConnectionDic.Remove(dst);
     }
 
+    public void Join()
+    {
+        SendWsMeg(TLabRTCSigAction.JOIN, null, null, null);
+    }
+
     public void SendRTCMsg(string message)
     {
         foreach(RTCDataChannel dataChannel in dataChannelDic.Values) dataChannel.Send(message);
@@ -334,6 +355,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         {
             TLabRTCSigJson obj  = new TLabRTCSigJson();
             obj.src     = this.gameObject.name;
+            obj.room    = roomName;
             obj.dst     = dst;
             obj.action  = (int)action;
             obj.desc    = desc;
@@ -373,12 +395,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     {
         Debug.Log(thisName + "create call back start");
 
-        onDataChannelMessage = bytes =>
-        {
-            string receive = System.Text.Encoding.UTF8.GetString(bytes);
-            Debug.Log(thisName + "receive: " + receive);
-        };
-
         Debug.Log(thisName + "connect to signaling server start");
 
         m_websocket = new WebSocket("ws://localhost:3001");
@@ -386,8 +402,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         m_websocket.OnOpen += () =>
         {
             Debug.Log(thisName + "Connection open!");
-
-            SendWsMeg(TLabRTCSigAction.JOIN, null, null, null);
         };
 
         m_websocket.OnError += (e) =>

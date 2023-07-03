@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 373349316}
   - component: {fileID: 373349315}
   - component: {fileID: 373349314}
+  - component: {fileID: 373349318}
   m_Layer: 5
   m_Name: SendBtn (3)
   m_TagString: Untagged
@@ -176,6 +177,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b07d1e184178bdd48ae423d746ced571, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  roomName: Test
+  onMessage:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 373349318}
+        m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
+        m_MethodName: OnMessage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &373349315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -270,6 +287,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 373349312}
   m_CullTransparentMesh: 0
+--- !u!114 &373349318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 373349312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03122dfd2da12344abb2ec81e5199076, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &383998098
 GameObject:
   m_ObjectHideFlags: 0
@@ -443,6 +472,7 @@ GameObject:
   - component: {fileID: 625888698}
   - component: {fileID: 625888700}
   - component: {fileID: 625888701}
+  - component: {fileID: 625888702}
   m_Layer: 5
   m_Name: SendBtn
   m_TagString: Untagged
@@ -577,6 +607,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b07d1e184178bdd48ae423d746ced571, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  roomName: Test
+  onMessage:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 625888702}
+        m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
+        m_MethodName: OnMessage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &625888702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 625888696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03122dfd2da12344abb2ec81e5199076, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &853984782
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,6 +728,7 @@ GameObject:
   - component: {fileID: 890071919}
   - component: {fileID: 890071918}
   - component: {fileID: 890071917}
+  - component: {fileID: 890071921}
   m_Layer: 5
   m_Name: SendBtn (2)
   m_TagString: Untagged
@@ -710,6 +769,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b07d1e184178bdd48ae423d746ced571, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  roomName: Test
+  onMessage:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 890071921}
+        m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
+        m_MethodName: OnMessage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &890071918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -804,6 +879,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 890071915}
   m_CullTransparentMesh: 0
+--- !u!114 &890071921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890071915}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03122dfd2da12344abb2ec81e5199076, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &906405716
 GameObject:
   m_ObjectHideFlags: 0
@@ -1095,6 +1182,7 @@ GameObject:
   - component: {fileID: 1421604737}
   - component: {fileID: 1421604736}
   - component: {fileID: 1421604739}
+  - component: {fileID: 1421604740}
   m_Layer: 5
   m_Name: SendBtn (1)
   m_TagString: Untagged
@@ -1227,6 +1315,34 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b07d1e184178bdd48ae423d746ced571, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roomName: Test
+  onMessage:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1421604740}
+        m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
+        m_MethodName: OnMessage
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1421604740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1421604734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03122dfd2da12344abb2ec81e5199076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2074762371
