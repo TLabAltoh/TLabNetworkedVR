@@ -628,7 +628,7 @@ public class TLabSyncClient : MonoBehaviour
                 for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
         }
 
-        string targetName = Convert.ToBase64String(nameBytes);
+        string targetName = System.Text.Encoding.UTF8.GetString(nameBytes);
 
         TLabSyncGrabbable grabbable = m_grabbables[targetName] as TLabSyncGrabbable;
 

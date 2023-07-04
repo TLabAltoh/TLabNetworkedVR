@@ -306,7 +306,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         rtcTransform[8] = this.transform.localScale.y;
         rtcTransform[9] = this.transform.localScale.z;
 
-        byte[] id       = Convert.FromBase64String(this.gameObject.name);
+        byte[] id       = System.Text.Encoding.UTF8.GetBytes(this.gameObject.name);
         byte[] packet   = new byte[1 + name.Length + rtcTransform.Length * sizeof(float)];
 
         packet[0] = (byte)name.Length;
@@ -329,6 +329,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         #endregion unsageコードを使用したパケットの生成
 
         TLabSyncClient.Instalce.SendRTCMessage(packet);
+
+        Debug.Log(thisName + "sync with webrtc");
 
         m_isSyncFromOutside = false;
     }
