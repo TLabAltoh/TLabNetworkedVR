@@ -384,7 +384,7 @@ public class TLabSyncClient : MonoBehaviour
                         m_animators[syncAnim.gameObject.name] = syncAnim;
 
                     // Connect to signaling server
-                    dataChannel.Join(this.gameObject.name + "_" + m_seatIndex.ToString());
+                    dataChannel.Join(this.gameObject.name + "_" + m_seatIndex.ToString(), "VR_Class");
 
                     return;
                     #endregion

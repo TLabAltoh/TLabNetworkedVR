@@ -179,7 +179,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   serverAddr: ws://192.168.11.14:3001
   userID: 
-  roomName: Test
+  roomID: 
   onMessage:
     m_PersistentCalls:
       m_Calls:
@@ -302,6 +302,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dataChannel: {fileID: 373349314}
+  userID: 3
+  roomID: Test
 --- !u!1 &383998098
 GameObject:
   m_ObjectHideFlags: 0
@@ -469,7 +471,7 @@ MonoBehaviour:
       - m_Target: {fileID: 625888702}
         m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
         m_MethodName: Join
-        m_Mode: 5
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -746,7 +748,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   serverAddr: ws://192.168.11.14:3001
   userID: 
-  roomName: Test
+  roomID: 
   onMessage:
     m_PersistentCalls:
       m_Calls:
@@ -775,6 +777,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dataChannel: {fileID: 625888701}
+  userID: 0
+  roomID: Test
 --- !u!1 &694715393
 GameObject:
   m_ObjectHideFlags: 0
@@ -862,7 +866,7 @@ MonoBehaviour:
       - m_Target: {fileID: 373349318}
         m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
         m_MethodName: Join
-        m_Mode: 5
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -1045,7 +1049,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   serverAddr: ws://192.168.11.14:3001
   userID: 
-  roomName: Test
+  roomID: 
   onMessage:
     m_PersistentCalls:
       m_Calls:
@@ -1168,6 +1172,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dataChannel: {fileID: 890071917}
+  userID: 2
+  roomID: Test
 --- !u!1 &906405716
 GameObject:
   m_ObjectHideFlags: 0
@@ -1840,7 +1846,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   serverAddr: ws://192.168.11.14:3001
   userID: 
-  roomName: Test
+  roomID: 
   onMessage:
     m_PersistentCalls:
       m_Calls:
@@ -1869,6 +1875,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dataChannel: {fileID: 1421604739}
+  userID: 1
+  roomID: Test
 --- !u!1 &1465840175
 GameObject:
   m_ObjectHideFlags: 0
@@ -1956,7 +1964,7 @@ MonoBehaviour:
       - m_Target: {fileID: 1421604740}
         m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
         m_MethodName: Join
-        m_Mode: 5
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -2090,7 +2098,7 @@ MonoBehaviour:
       - m_Target: {fileID: 890071921}
         m_TargetAssemblyTypeName: TLabWebRTCDataChannelTest, Assembly-CSharp
         m_MethodName: Join
-        m_Mode: 5
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine

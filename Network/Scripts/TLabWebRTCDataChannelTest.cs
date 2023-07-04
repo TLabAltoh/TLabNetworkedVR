@@ -5,9 +5,12 @@ public class TLabWebRTCDataChannelTest : MonoBehaviour
 {
     [SerializeField] TLabWebRTCDataChannel dataChannel;
 
-    public void Join(string id)
+    [SerializeField] private string userID;
+    [SerializeField] private string roomID;
+
+    public void Join( )
     {
-        dataChannel.Join(id);
+        dataChannel.Join(userID, roomID);
     }
 
     public void SendMessageTest(string message)

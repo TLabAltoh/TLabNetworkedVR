@@ -330,8 +330,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         TLabSyncClient.Instalce.SendRTCMessage(packet);
 
-        Debug.Log(thisName + "sync with webrtc");
-
         m_isSyncFromOutside = false;
     }
 

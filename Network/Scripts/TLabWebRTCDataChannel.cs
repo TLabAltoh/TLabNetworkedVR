@@ -54,7 +54,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     [SerializeField] private string serverAddr = "ws://localhost:3001";
     [SerializeField] private string userID;
-    [SerializeField] private string roomName;
+    [SerializeField] private string roomID;
     [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
 
 #if UNITY_EDITOR
@@ -349,9 +349,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         peerConnectionDic.Remove(dst);
     }
 
-    public void Join(string userID)
+    public void Join(string userID, string roomID)
     {
         this.userID = userID;
+        this.roomID = roomID;
+
         SendWsMeg(TLabRTCSigAction.JOIN, null, null, null);
     }
 
@@ -368,7 +370,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         {
             TLabRTCSigJson obj  = new TLabRTCSigJson();
             obj.src     = userID;
-            obj.room    = roomName;
+            obj.room    = roomID;
             obj.dst     = dst;
             obj.action  = (int)action;
             obj.desc    = desc;
