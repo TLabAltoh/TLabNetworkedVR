@@ -634,22 +634,24 @@ public class TLabSyncClient : MonoBehaviour
 
         if (grabbable == null) return;
 
+        float[] rtcTransform = new float[10];
+
         unsafe
         {
-            fixed(byte* iniP = bytes)
-            {
-                byte* pt = iniP + 1 + offset;
-
-                WebObjectInfo webTransform = new WebObjectInfo
-                {
-                    position    = new WebVector3 { x = *pt++, y = *pt++, z = *pt++ },
-                    rotation    = new WebVector4 { x = *pt++, y = *pt++, z = *pt++, w = *pt++},
-                    scale       = new WebVector3 { x = *pt++, y = *pt++, z = *pt++ }
-                };
-
-                grabbable.SyncFromOutside(webTransform);
-            }
+            // transform
+            fixed (byte* iniP   = bytes)            
+            fixed (float* iniD  = &(rtcTransform[0]))
+                for (byte* pt = iniP + 1 + offset, pd = (byte*)iniD; pt < iniP + 1 + offset + dataLen; pt++, pd++) *pd = *pt;
         }
+
+        WebObjectInfo webTransform = new WebObjectInfo
+        {
+            position    = new WebVector3 { x = rtcTransform[0], y = rtcTransform[1], z = rtcTransform[2] },
+            rotation    = new WebVector4 { x = rtcTransform[3], y = rtcTransform[4], z = rtcTransform[5], w = rtcTransform[6] },
+            scale       = new WebVector3 { x = rtcTransform[7], y = rtcTransform[8], z = rtcTransform[9] }
+        };
+
+        grabbable.SyncFromOutside(webTransform);
     }
 
     /// <summary>

@@ -311,19 +311,19 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         packet[0] = (byte)name.Length;
 
-        int offset  = 1 + name.Length;
+        int offset  = name.Length;
         int dataLen = rtcTransform.Length * sizeof(float);
 
         unsafe
         {
             // id
             fixed (byte* iniP = packet, iniD = id)
-                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + offset; pt++, pd++) *pt = *pd;
+                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + 1 + offset; pt++, pd++) *pt = *pd;
 
             // transform
             fixed (byte*  iniP = packet)
             fixed (float* iniD = &(rtcTransform[0]))
-                for (byte* pt = iniP + offset, pd = (byte*)iniD; pt < iniP + offset + dataLen; pt++, pd++) *pt = *pd;
+                for (byte* pt = iniP + 1 + offset, pd = (byte*)iniD; pt < iniP + 1 + offset + dataLen; pt++, pd++) *pt = *pd;
         }
 
         #endregion unsageコードを使用したパケットの生成
