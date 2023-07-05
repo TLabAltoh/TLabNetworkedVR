@@ -618,12 +618,14 @@ public class TLabSyncClient : MonoBehaviour
     public void OnRTCMessage(string dst, string src, byte[] bytes)
     {
         int offset  = bytes[0];
+        int nOffset = 1 + offset;
         int dataLen = bytes.Length - offset;
 
         byte[] nameBytes = new byte[offset];
 
         unsafe
         {
+            // id
             fixed (byte* iniP = nameBytes, iniD = bytes)
                 for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
         }
@@ -641,7 +643,7 @@ public class TLabSyncClient : MonoBehaviour
             // transform
             fixed (byte* iniP   = bytes)            
             fixed (float* iniD  = &(rtcTransform[0]))
-                for (byte* pt = iniP + 1 + offset, pd = (byte*)iniD; pt < iniP + 1 + offset + dataLen; pt++, pd++) *pd = *pt;
+                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
         }
 
         WebObjectInfo webTransform = new WebObjectInfo

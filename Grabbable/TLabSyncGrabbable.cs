@@ -309,21 +309,22 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         byte[] id       = System.Text.Encoding.UTF8.GetBytes(this.gameObject.name);
         byte[] packet   = new byte[1 + name.Length + rtcTransform.Length * sizeof(float)];
 
-        packet[0] = (byte)name.Length;
+        packet[0]   = (byte)name.Length;
 
         int offset  = name.Length;
+        int nOffset = 1 + offset;
         int dataLen = rtcTransform.Length * sizeof(float);
 
         unsafe
         {
             // id
             fixed (byte* iniP = packet, iniD = id)
-                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + 1 + offset; pt++, pd++) *pt = *pd;
+                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + nOffset; pt++, pd++) *pt = *pd;
 
             // transform
             fixed (byte*  iniP = packet)
             fixed (float* iniD = &(rtcTransform[0]))
-                for (byte* pt = iniP + 1 + offset, pd = (byte*)iniD; pt < iniP + 1 + offset + dataLen; pt++, pd++) *pt = *pd;
+                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pt = *pd;
         }
 
         #endregion unsageコードを使用したパケットの生成
