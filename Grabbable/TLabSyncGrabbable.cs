@@ -608,9 +608,9 @@ public class TLabSyncGrabbableEditor : Editor
         {
             // Grabbable
             // Rigidbody‚ÌUseGravity‚ð–³Œø‰»‚·‚é
-            grabbable.m_enableSync = true;
-            grabbable.m_autoSync = false;
-            grabbable.m_locked = false;
+            grabbable.m_enableSync  = true;
+            grabbable.m_autoSync    = false;
+            grabbable.m_locked      = false;
             grabbable.UseRigidbody(false, false);
 
             if (grabbable.EnableDivide == true)
