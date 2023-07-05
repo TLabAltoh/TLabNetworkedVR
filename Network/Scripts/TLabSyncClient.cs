@@ -638,7 +638,7 @@ public class TLabSyncClient : MonoBehaviour
         {
             fixed(byte* iniP = bytes)
             {
-                byte* pt = iniP + offset;
+                byte* pt = iniP + 1 + offset;
 
                 WebObjectInfo webTransform = new WebObjectInfo
                 {
