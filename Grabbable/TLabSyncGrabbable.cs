@@ -23,6 +23,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private bool m_isSyncFromOutside = false;
 
+    private float m_wait = 0.0f;
+    private const float WAIT = 2.0f;
+
     // https://www.fenet.jp/dotnet/column/language/4836/
     // A fast approach to string processing
 
@@ -181,6 +184,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_rbAllocated == true) SetGravity(!active);
 
+        SyncTransform();
+
         TLabSyncJson obj = new TLabSyncJson
         {
             role        = (int)WebRole.GUEST,
@@ -281,6 +286,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     /// </summary>
     public void SyncRTCTransform()
     {
+        // 一定の時間間隔でサーバーにTransformをキャッシュする
+
+        if ((m_wait += Time.deltaTime) > WAIT)
+        {
+            SyncTransform();
+            return;
+        }
+
         if (m_enableSync == false) return;
 
         #region unsageコードを使用したパケットの生成
@@ -340,6 +353,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public void SyncTransform()
     {
         if (m_enableSync == false) return;
+
+        m_wait = 0.0f;
 
         #region StringBuilderでパケットの生成の高速化
 
