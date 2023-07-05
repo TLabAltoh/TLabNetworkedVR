@@ -547,13 +547,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 UpdatePosition();
             }
 
-            SyncTransform();
+            SyncRTCTransform();
         }
         else
         {
             m_scaleInitialDistance = -1.0f;
 
-            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncTransform();
+            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncRTCTransform();
         }
     }
 
