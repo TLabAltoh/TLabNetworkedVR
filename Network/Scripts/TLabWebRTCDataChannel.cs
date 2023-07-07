@@ -19,34 +19,35 @@ public enum TLabRTCSigAction
 [System.Serializable]
 public class TLabRTCICE
 {
-    public string   candidate;
-    public string   sdpMid;
-    public string   sdpMLineIndex;
+    public string candidate;
+    public string sdpMid;
+    public string sdpMLineIndex;
 }
 
 [System.Serializable]
 public class TLabRTCDesc
 {
-    public int      type;
-    public string   sdp;
+    public int type;
+    public string sdp;
 }
 
 [System.Serializable]
 public class TLabRTCSigJson
 {
-    public int          action;
-    public string       room;
-    public string       src;
-    public string       dst;
-    public TLabRTCDesc  desc;
-    public TLabRTCICE   ice;
+    public int action;
+    public string room;
+    public string src;
+    public string dst;
+    public TLabRTCDesc desc;
+    public TLabRTCICE ice;
 }
 
 public class TLabWebRTCDataChannel : MonoBehaviour
 {
-    private Dictionary<string, RTCPeerConnection>       peerConnectionDic   = new Dictionary<string, RTCPeerConnection>();
-    private Dictionary<string, RTCDataChannel>          dataChannelDic      = new Dictionary<string, RTCDataChannel>();
-    private Dictionary<string, List<RTCIceCandidate>>   candidateDic        = new Dictionary<string, List<RTCIceCandidate>>();
+    private Dictionary<string, RTCPeerConnection> peerConnectionDic = new Dictionary<string, RTCPeerConnection>();
+    private Dictionary<string, RTCDataChannel> dataChannelDic = new Dictionary<string, RTCDataChannel>();
+    private Dictionary<string, bool> dataChannelFlagDic = new Dictionary<string, bool>();
+    private Dictionary<string, List<RTCIceCandidate>> candidateDic = new Dictionary<string, List<RTCIceCandidate>>();
 
     private WebSocket m_websocket;
 
@@ -71,9 +72,9 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         bool isNull = !int.TryParse(tlabIce.sdpMLineIndex, out i);
 
         RTCIceCandidateInit candidateInfo = new RTCIceCandidateInit();
-        candidateInfo.candidate     = tlabIce.candidate;
-        candidateInfo.sdpMid        = tlabIce.sdpMid;
-        if(isNull == false) candidateInfo.sdpMLineIndex = i;
+        candidateInfo.candidate = tlabIce.candidate;
+        candidateInfo.sdpMid = tlabIce.sdpMid;
+        if (isNull == false) candidateInfo.sdpMLineIndex = i;
 
         RTCIceCandidate candidate = new RTCIceCandidate(candidateInfo);
 
@@ -95,11 +96,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private void SendIceCandidate(string dst, RTCIceCandidate candidate)
     {
-        TLabRTCICE tlabICE       = new TLabRTCICE();
-        tlabICE.candidate        = candidate.Candidate;
-        tlabICE.sdpMid           = candidate.SdpMid;
-        if(candidate.SdpMLineIndex != null)
-            tlabICE.sdpMLineIndex    = candidate.SdpMLineIndex.ToString();
+        TLabRTCICE tlabICE = new TLabRTCICE();
+        tlabICE.candidate = candidate.Candidate;
+        tlabICE.sdpMid = candidate.SdpMid;
+        if (candidate.SdpMLineIndex != null)
+            tlabICE.sdpMLineIndex = candidate.SdpMLineIndex.ToString();
 
         SendWsMeg(TLabRTCSigAction.ICE, null, tlabICE, dst);
     }
@@ -162,38 +163,35 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     #endregion SessionDescription
 
     #region Signaling
-    private void CreatePeerConnection(string id, bool call)
+    private IEnumerator CreatePeerConnectionTask(string id, bool call)
     {
-        if (peerConnectionDic.ContainsKey(id) == true)
-        {
-            peerConnectionDic[id].Close();
-            peerConnectionDic[id] = null;
-            peerConnectionDic.Remove(id);
-        }
-
-        if(dataChannelDic.ContainsKey(id) == true)
-        {
-            dataChannelDic[id].Close();
-            dataChannelDic[id] = null;
-            dataChannelDic.Remove(id);
-        }
+        // dataChannelの目的のキーが空になるまで待機
+        while (dataChannelDic.ContainsKey(id) == true) yield return null;
 
         Debug.Log(thisName + "create new peerConnection start");
 
-        RTCConfiguration configuration  = GetSelectedSdpSemantics();
-        peerConnectionDic[id]           = new RTCPeerConnection(ref configuration);
-        peerConnectionDic[id].OnIceCandidate            = candidate => { OnIceCandidate(id, candidate); };
-        peerConnectionDic[id].OnIceConnectionChange     = state     => { OnIceConnectionChange(state); };
+        RTCConfiguration configuration = GetSelectedSdpSemantics();
+        peerConnectionDic[id] = new RTCPeerConnection(ref configuration);
+        peerConnectionDic[id].OnIceCandidate = candidate => { OnIceCandidate(id, candidate); };
+        peerConnectionDic[id].OnIceConnectionChange = state => { OnIceConnectionChange(state); };
 
-        if(call == true)
+        if (call == true)
         {
             Debug.Log(thisName + "create new dataChennel start");
 
             RTCDataChannelInit conf = new RTCDataChannelInit();
             dataChannelDic[id] = peerConnectionDic[id].CreateDataChannel("data", conf);
-            dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(userID, id, bytes); };
-            dataChannelDic[id].OnOpen       = ()    => { };
-            dataChannelDic[id].OnClose      = ()    => { };
+            dataChannelDic[id].OnMessage = bytes => { onMessage.Invoke(userID, id, bytes); };
+            dataChannelDic[id].OnOpen = () => {
+                Debug.Log(thisName + id + ": DataChannel Open");
+                dataChannelFlagDic[id] = true;
+            };
+            dataChannelDic[id].OnClose = () => {
+                Debug.Log(thisName + id + ": DataChannel Close");
+                dataChannelDic.Remove(id);
+                dataChannelFlagDic.Remove(id);
+            };
+            dataChannelFlagDic[id] = false;
         }
         else
         {
@@ -201,12 +199,28 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             {
                 Debug.Log(thisName + "dataChannel created on offer peerConnection");
 
+                dataChannelFlagDic[id] = true;
                 dataChannelDic[id] = channel;
-                dataChannelDic[id].OnMessage    = bytes => { onMessage.Invoke(userID, id, bytes); };
-                dataChannelDic[id].OnOpen       = ()    => { };
-                dataChannelDic[id].OnClose      = ()    => { };
+                dataChannelDic[id].OnMessage = bytes => { onMessage.Invoke(userID, id, bytes); };
+                dataChannelDic[id].OnOpen = () => { };
+                dataChannelDic[id].OnClose = () => {
+                    Debug.Log(thisName + id + ": DataChannel Close");
+                    dataChannelDic.Remove(id);
+                    dataChannelFlagDic.Remove(id);
+                };
             };
         }
+    }
+
+    private void CreatePeerConnection(string id, bool call)
+    {
+        if (peerConnectionDic.ContainsKey(id) == true)
+            peerConnectionDic[id].Close();
+
+        if (dataChannelDic.ContainsKey(id) == true)
+            dataChannelDic[id].Close();
+
+        StartCoroutine(CreatePeerConnectionTask(id, call));
     }
 
     private RTCConfiguration GetSelectedSdpSemantics()
@@ -257,8 +271,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         Debug.Log(thisName + "peerConnection send local description start");
 
         TLabRTCDesc tlabDesc = new TLabRTCDesc();
-        tlabDesc.type        = (int)desc.type;
-        tlabDesc.sdp         = desc.sdp;
+        tlabDesc.type = (int)desc.type;
+        tlabDesc.sdp = desc.sdp;
 
         SendWsMeg(TLabRTCSigAction.ANSWER, tlabDesc, null, dst);
     }
@@ -312,8 +326,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         Debug.Log(thisName + "pc send local description start");
 
         TLabRTCDesc tlabDesc = new TLabRTCDesc();
-        tlabDesc.type        = (int)desc.type;
-        tlabDesc.sdp         = desc.sdp;
+        tlabDesc.type = (int)desc.type;
+        tlabDesc.sdp = desc.sdp;
 
         SendWsMeg(TLabRTCSigAction.OFFER, tlabDesc, null, dst);
     }
@@ -338,7 +352,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     {
         RTCSessionDescription result = new RTCSessionDescription();
         result.type = (RTCSdpType)tlabDesc.type;
-        result.sdp  = tlabDesc.sdp;
+        result.sdp = tlabDesc.sdp;
         return result;
     }
 
@@ -359,7 +373,12 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     public void SendRTCMsg(byte[] bytes)
     {
-        foreach(RTCDataChannel dataChannel in dataChannelDic.Values) dataChannel.Send(bytes);
+        foreach(string id in dataChannelDic.Keys)
+        {
+            RTCDataChannel dataChannel = dataChannelDic[id];
+
+            if (dataChannelFlagDic[id] == true) dataChannel.Send(bytes);
+        }
     }
 
     public async void SendWsMeg(
@@ -368,13 +387,13 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     {
         if (m_websocket.State == WebSocketState.Open)
         {
-            TLabRTCSigJson obj  = new TLabRTCSigJson();
-            obj.src     = userID;
-            obj.room    = roomID;
-            obj.dst     = dst;
-            obj.action  = (int)action;
-            obj.desc    = desc;
-            obj.ice     = ice;
+            TLabRTCSigJson obj = new TLabRTCSigJson();
+            obj.src = userID;
+            obj.room = roomID;
+            obj.dst = dst;
+            obj.action = (int)action;
+            obj.desc = desc;
+            obj.ice = ice;
 
             string json = JsonUtility.ToJson(obj);
 
@@ -394,7 +413,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
                 AddIceCandidate(parse.src, parse.ice);
                 break;
             case (int)TLabRTCSigAction.OFFER:
-                StartCoroutine(OnOffer(parse.src ,GetDescription(parse.desc)));
+                StartCoroutine(OnOffer(parse.src, GetDescription(parse.desc)));
                 break;
             case (int)TLabRTCSigAction.ANSWER:
                 StartCoroutine(OnAnswer(parse.src, GetDescription(parse.desc)));

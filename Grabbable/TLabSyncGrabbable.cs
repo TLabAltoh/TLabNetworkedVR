@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -22,9 +24,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     private int m_grabbed = -1;
 
     private bool m_isSyncFromOutside = false;
-
-    private float m_wait = 0.0f;
-    private const float WAIT = 2.0f;
 
     // https://www.fenet.jp/dotnet/column/language/4836/
     // A fast approach to string processing
@@ -104,6 +103,30 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = true;
     }
 
+    private IEnumerator RegistRbObj()
+    {
+        // useGravity -> falseの場合，サーバーに登録しない
+        if (m_useGravity == false) yield break;
+
+        // Syncサーバーとの接続が確立するまで待機
+        while (TLabSyncClient.Instalce == null ||
+            TLabSyncClient.Instalce.SocketIsOpen == false) yield return null;
+
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.REGISTRBOBJ,
+            transform   = new WebObjectInfo
+            {
+                id = this.gameObject.name
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+
+        Debug.Log(thisName + "Send Rb Obj");
+    }
+
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
@@ -113,7 +136,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         // ------> 重力計算を有効化
         SetGravity((m_grabbed == -1 && active) ? true : false);
 
-        Debug.Log(thisName + "rb allocated " + (m_grabbed == -1 && active) + "\t" + this.gameObject.name);
+        bool allocated = m_grabbed == -1 && active;
+        Debug.Log(thisName + "rb allocated:" + allocated + " - " + this.gameObject.name);
     }
 
     public void ForceReleaseSelf()
@@ -286,14 +310,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     /// </summary>
     public void SyncRTCTransform()
     {
-        // 一定の時間間隔でサーバーにTransformをキャッシュする
-
-        if ((m_wait += Time.deltaTime) > WAIT)
-        {
-            SyncTransform();
-            return;
-        }
-
         if (m_enableSync == false) return;
 
         #region unsageコードを使用したパケットの生成
@@ -353,8 +369,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public void SyncTransform()
     {
         if (m_enableSync == false) return;
-
-        m_wait = 0.0f;
 
         #region StringBuilderでパケットの生成の高速化
 
@@ -547,7 +561,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         base.Start();
 
+        // サーバーからRigidbody割り当てされるまで無効化する
         SetGravity(false);
+
+        // useGravity -> trueの場合，Syncサーバーにオブジェクトを登録
+        StartCoroutine(RegistRbObj());
+
+        // Syncクライアントに自分を登録
         TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 

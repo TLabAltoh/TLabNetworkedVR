@@ -81,12 +81,14 @@ public enum WebAction
     GUESTDISCONNECT,
     GUESTPARTICIPATION,
     ALLOCATEGRAVITY,
+    REGISTRBOBJ,
     GRABBLOCK,
     FORCERELEASE,
     DIVIDEGRABBER,
     SYNCTRANSFORM,
     SYNCANIM,
     REFLESH,
+    UNIREFLESH,
     CUSTOMACTION
 }
 
@@ -101,31 +103,31 @@ public enum WebAnimValueType
 public static class TLabSyncClientConst
 {
     // Top
-    public const string COMMA       = ",";
-    public const string ROLE        = "\"role\":";
-    public const string ACTION      = "\"action\":";
-    public const string SEATINDEX   = "\"seatIndex\":";
-    public const string ACTIVE      = "\"active\":";
-    public const string TRANSFORM   = "\"transform\":";
-    public const string ANIMATOR    = "\"animator\":";
+    public const string COMMA = ",";
+    public const string ROLE = "\"role\":";
+    public const string ACTION = "\"action\":";
+    public const string SEATINDEX = "\"seatIndex\":";
+    public const string ACTIVE = "\"active\":";
+    public const string TRANSFORM = "\"transform\":";
+    public const string ANIMATOR = "\"animator\":";
 
     // Transform
-    public const string TRANSFORM_ID    = "\"id\":";
-    public const string RIGIDBODY       = "\"rigidbody\":";
-    public const string GRAVITY         = "\"gravity\":";
-    public const string POSITION        = "\"position\":";
-    public const string ROTATION        = "\"rotation\":";
-    public const string SCALE           = "\"scale\":";
+    public const string TRANSFORM_ID = "\"id\":";
+    public const string RIGIDBODY = "\"rigidbody\":";
+    public const string GRAVITY = "\"gravity\":";
+    public const string POSITION = "\"position\":";
+    public const string ROTATION = "\"rotation\":";
+    public const string SCALE = "\"scale\":";
 
     // Animator
-    public const string ANIMATOR_ID     = "\"id\":";
-    public const string PARAMETER       = "\"parameter\":";
-    public const string TYPE            = "\"type\":";
+    public const string ANIMATOR_ID = "\"id\":";
+    public const string PARAMETER = "\"parameter\":";
+    public const string TYPE = "\"type\":";
 
-    public const string FLOATVAL        = "\"floatVal\":";
-    public const string INTVAL          = "\"intVal\":";
-    public const string BOOLVAL         = "\"boolVal\":";
-    public const string TRIGGERVAL      = "\"triggerVal\":";
+    public const string FLOATVAL = "\"floatVal\":";
+    public const string INTVAL = "\"intVal\":";
+    public const string BOOLVAL = "\"boolVal\":";
+    public const string TRIGGERVAL = "\"triggerVal\":";
 
     // WebVector
     public const string X = "\"x\":";
@@ -141,17 +143,17 @@ public class TLabSyncClientCustomCallback
 {
     public void OnMessage(string message)
     {
-        if(onMessage != null) onMessage.Invoke(message);
+        if (onMessage != null) onMessage.Invoke(message);
     }
 
     public void OnGuestParticipated(int seatIndex)
     {
-        if(onGuestParticipated != null) onGuestParticipated.Invoke(seatIndex);
+        if (onGuestParticipated != null) onGuestParticipated.Invoke(seatIndex);
     }
 
     public void OnGuestDisconnected(int seatIndex)
     {
-        if(onGuestDisconnected != null) onGuestDisconnected.Invoke(seatIndex);
+        if (onGuestDisconnected != null) onGuestDisconnected.Invoke(seatIndex);
     }
 
     [SerializeField] private UnityEvent<string> onMessage;
@@ -202,15 +204,15 @@ public class TLabSyncClient : MonoBehaviour
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
     private WebSocket websocket;
-    private int m_seatIndex         = -1;
-    private bool[] m_guestTable     = new bool[SEAT_LENGTH];
-    private const int SEAT_LENGTH   = 4;
+    private int m_seatIndex = -1;
+    private bool[] m_guestTable = new bool[SEAT_LENGTH];
+    private const int SEAT_LENGTH = 4;
 
-    private Hashtable m_grabbables  = new Hashtable();
-    private Hashtable m_animators   = new Hashtable();
+    private Hashtable m_grabbables = new Hashtable();
+    private Hashtable m_animators = new Hashtable();
 
     private const string prefabName = "OVRGuestAnchor.";
-    private const string thisName   = "[tlabsyncclient] ";
+    private const string thisName = "[tlabsyncclient] ";
 
     public Hashtable Grabbables
     {
@@ -233,6 +235,14 @@ public class TLabSyncClient : MonoBehaviour
         get
         {
             return SEAT_LENGTH;
+        }
+    }
+
+    public bool SocketIsOpen
+    {
+        get
+        {
+            return websocket == null ? false : websocket.State == WebSocketState.Open;
         }
     }
 
@@ -260,6 +270,7 @@ public class TLabSyncClient : MonoBehaviour
     }
     #endregion AddSyncTarget
 
+    #region Reflesh
     /// <summary>
     /// - Grabberのrigidbodyの再割り当て
     /// - 現在のサーバー上に記録されているTransformを要求
@@ -269,15 +280,33 @@ public class TLabSyncClient : MonoBehaviour
     {
         TLabSyncJson obj = new TLabSyncJson
         {
-            role    = (int)WebRole.GUEST,
-            action  = (int)WebAction.REFLESH,
-            active  = reloadWorldData
+            role = (int)WebRole.GUEST,
+            action = (int)WebAction.REFLESH,
+            active = reloadWorldData
         };
         string json = JsonUtility.ToJson(obj);
         SendWsMessage(json);
 
         Debug.Log(thisName + "force reflesh");
     }
+
+    public void UniReflesh(string targetName)
+    {
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)WebRole.GUEST,
+            action = (int)WebAction.UNIREFLESH,
+            transform = new WebObjectInfo
+            {
+                id = targetName
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        SendWsMessage(json);
+
+        Debug.Log(thisName + "reflesh " + targetName);
+    }
+    #endregion Reflesh
 
     #region ConnectServer
 
@@ -347,9 +376,9 @@ public class TLabSyncClient : MonoBehaviour
                     {
                         string guestName = prefabName + obj.seatIndex.ToString();
 
-                        m_rightHand.name    = guestName + ".RTouch";
-                        m_leftHand.name     = guestName + ".LTouch";
-                        m_cameraRig.name    = guestName + ".Head";
+                        m_rightHand.name = guestName + ".RTouch";
+                        m_leftHand.name = guestName + ".LTouch";
+                        m_cameraRig.name = guestName + ".Head";
 
                         m_cameraRig.transform.localPosition = Vector3.zero;
                         m_cameraRig.transform.localRotation = Quaternion.identity;
@@ -366,9 +395,9 @@ public class TLabSyncClient : MonoBehaviour
                             m_rootTransform.rotation = anchor.rotation;
                         }
 
-                        m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync  = true;
-                        m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync   = true;
-                        m_cameraRig.GetComponent<TLabSyncGrabbable>().m_enableSync  = true;
+                        m_rightHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
+                        m_leftHand.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
+                        m_cameraRig.GetComponent<TLabSyncGrabbable>().m_enableSync = true;
                     }
 
                     // TAdd TLabSyncGrabbable to hash table for fast lookup by name
@@ -394,9 +423,9 @@ public class TLabSyncClient : MonoBehaviour
                     #region
                     string guestName = prefabName + obj.seatIndex.ToString();
 
-                    GameObject guestRTouch  = GameObject.Find(guestName + ".RTouch");
-                    GameObject guestLTouch  = GameObject.Find(guestName + ".LTouch");
-                    GameObject guestHead    = GameObject.Find(guestName + ".Head");
+                    GameObject guestRTouch = GameObject.Find(guestName + ".RTouch");
+                    GameObject guestLTouch = GameObject.Find(guestName + ".LTouch");
+                    GameObject guestHead = GameObject.Find(guestName + ".Head");
 
                     if (guestRTouch != null)
                     {
@@ -428,8 +457,8 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.GUESTPARTICIPATION)
                 {
                     #region
-                    Vector3 respownPos      = new Vector3(0.0f, -0.5f, 0.0f);
-                    Quaternion respownRot   = Quaternion.identity;
+                    Vector3 respownPos = new Vector3(0.0f, -0.5f, 0.0f);
+                    Quaternion respownRot = Quaternion.identity;
 
                     string guestName = prefabName + obj.seatIndex.ToString();
 
@@ -437,24 +466,24 @@ public class TLabSyncClient : MonoBehaviour
 
                     if (m_guestRTouch != null)
                     {
-                        GameObject guestRTouch  = Instantiate(m_guestRTouch, respownPos, respownRot);
-                        guestRTouch.name        = guestName + ".RTouch";
+                        GameObject guestRTouch = Instantiate(m_guestRTouch, respownPos, respownRot);
+                        guestRTouch.name = guestName + ".RTouch";
 
                         m_grabbables[guestRTouch.name] = guestRTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
                     if (m_guestLTouch != null)
                     {
-                        GameObject guestLTouch  = Instantiate(m_guestLTouch, respownPos, respownRot);
-                        guestLTouch.name        = guestName + ".LTouch";
+                        GameObject guestLTouch = Instantiate(m_guestLTouch, respownPos, respownRot);
+                        guestLTouch.name = guestName + ".LTouch";
 
                         m_grabbables[guestLTouch.name] = guestLTouch.GetComponent<TLabSyncGrabbable>();
                     }
 
                     if (m_guestHead != null)
                     {
-                        GameObject guestHead    = Instantiate(m_guestHead, respownPos, respownRot);
-                        guestHead.name          = guestName + ".Head";
+                        GameObject guestHead = Instantiate(m_guestHead, respownPos, respownRot);
+                        guestHead.name = guestName + ".Head";
 
                         m_grabbables[guestHead.name] = guestHead.GetComponent<TLabSyncGrabbable>();
                     }
@@ -472,7 +501,7 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.ALLOCATEGRAVITY)
                 {
                     #region
-                    WebObjectInfo webTransform  = obj.transform;
+                    WebObjectInfo webTransform = obj.transform;
                     TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
                     if (grabbable != null) grabbable.AllocateGravity(obj.active);
 
@@ -495,7 +524,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.GRABBLOCK)
             {
-                WebObjectInfo webTransform  = obj.transform;
+                WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -506,7 +535,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.FORCERELEASE)
             {
-                WebObjectInfo webTransform  = obj.transform;
+                WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -517,7 +546,7 @@ public class TLabSyncClient : MonoBehaviour
             }
             else if (obj.action == (int)WebAction.DIVIDEGRABBER)
             {
-                WebObjectInfo webTransform  = obj.transform;
+                WebObjectInfo webTransform = obj.transform;
                 TLabSyncGrabbable grabbable = m_grabbables[webTransform.id] as TLabSyncGrabbable;
 
                 if (grabbable == null) return;
@@ -529,7 +558,7 @@ public class TLabSyncClient : MonoBehaviour
             else if (obj.action == (int)WebAction.SYNCANIM)
             {
                 WebAnimInfo webAnimator = obj.animator;
-                TLabSyncAnim syncAnim   = m_animators[webAnimator.id] as TLabSyncAnim;
+                TLabSyncAnim syncAnim = m_animators[webAnimator.id] as TLabSyncAnim;
 
                 if (syncAnim == null) return;
 
@@ -617,7 +646,7 @@ public class TLabSyncClient : MonoBehaviour
     /// <param name="bytes"></param>
     public void OnRTCMessage(string dst, string src, byte[] bytes)
     {
-        int offset  = bytes[0];
+        int offset = bytes[0];
         int nOffset = 1 + offset;
         int dataLen = bytes.Length - offset;
 
@@ -641,16 +670,16 @@ public class TLabSyncClient : MonoBehaviour
         unsafe
         {
             // transform
-            fixed (byte* iniP   = bytes)            
-            fixed (float* iniD  = &(rtcTransform[0]))
+            fixed (byte* iniP = bytes)
+            fixed (float* iniD = &(rtcTransform[0]))
                 for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
         }
 
         WebObjectInfo webTransform = new WebObjectInfo
         {
-            position    = new WebVector3 { x = rtcTransform[0], y = rtcTransform[1], z = rtcTransform[2] },
-            rotation    = new WebVector4 { x = rtcTransform[3], y = rtcTransform[4], z = rtcTransform[5], w = rtcTransform[6] },
-            scale       = new WebVector3 { x = rtcTransform[7], y = rtcTransform[8], z = rtcTransform[9] }
+            position = new WebVector3 { x = rtcTransform[0], y = rtcTransform[1], z = rtcTransform[2] },
+            rotation = new WebVector4 { x = rtcTransform[3], y = rtcTransform[4], z = rtcTransform[5], w = rtcTransform[6] },
+            scale = new WebVector3 { x = rtcTransform[7], y = rtcTransform[8], z = rtcTransform[9] }
         };
 
         grabbable.SyncFromOutside(webTransform);
@@ -679,18 +708,18 @@ public class TLabSyncClient : MonoBehaviour
     {
         Instalce = this;
 
-        if(dataChannel == null) dataChannel = this.gameObject.GetComponent<TLabWebRTCDataChannel>();
+        if (dataChannel == null) dataChannel = this.gameObject.GetComponent<TLabWebRTCDataChannel>();
     }
 
     void Update()
     {
 #if !UNITY_WEBGL || UNITY_EDITOR
-        if(websocket != null) websocket.DispatchMessageQueue();
+        if (websocket != null) websocket.DispatchMessageQueue();
 #endif
     }
 
     private async void OnApplicationQuit()
     {
-        if(websocket != null) await websocket.Close();
+        if (websocket != null) await websocket.Close();
     }
 }
