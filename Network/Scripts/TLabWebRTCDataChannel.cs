@@ -13,7 +13,8 @@ public enum TLabRTCSigAction
     OFFER,
     ANSWER,
     ICE,
-    JOIN
+    JOIN,
+    EXIT
 }
 
 [System.Serializable]
@@ -54,8 +55,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     private const string thisName = "[tlabwebrtc] ";
 
     [SerializeField] private string serverAddr = "ws://localhost:3001";
+
+    [Header("Connection State")]
     [SerializeField] private string userID;
     [SerializeField] private string roomID;
+
     [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
 
 #if UNITY_EDITOR
@@ -214,11 +218,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private void CreatePeerConnection(string id, bool call)
     {
-        if (peerConnectionDic.ContainsKey(id) == true)
-            peerConnectionDic[id].Close();
-
         if (dataChannelDic.ContainsKey(id) == true)
             dataChannelDic[id].Close();
+
+        if (peerConnectionDic.ContainsKey(id) == true)
+            peerConnectionDic[id].Close();
 
         StartCoroutine(CreatePeerConnectionTask(id, call));
     }
