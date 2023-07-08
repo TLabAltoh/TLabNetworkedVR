@@ -110,7 +110,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         // Syncサーバーとの接続が確立するまで待機
         while (TLabSyncClient.Instalce == null ||
-            TLabSyncClient.Instalce.SocketIsOpen == false) yield return null;
+            TLabSyncClient.Instalce.SocketIsOpen == false ||
+            TLabSyncClient.Instalce.SeatIndex == -1) yield return null;
 
         TLabSyncJson obj = new TLabSyncJson
         {
@@ -496,6 +497,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     }
     #endregion SyncTransform
 
+    #region Divide
     public void OnDevideButtonClick()
     {
         Devide();
@@ -549,6 +551,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
     }
+    #endregion Divide
 
 #if UNITY_EDITOR
     protected override void TestFunc()
