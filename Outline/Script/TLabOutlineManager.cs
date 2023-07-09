@@ -168,6 +168,8 @@ public class TLabOutlineManager : MonoBehaviour
 
     private bool FileExists(string assetPath)
     {
+        if (assetPath.Length < "Assets".Length - 1) return false;
+
         return File.Exists(GetDiskPath(assetPath));
     }
 
