@@ -167,11 +167,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     #endregion SessionDescription
 
     #region Signaling
-    private IEnumerator CreatePeerConnectionTask(string id, bool call)
+    private void CreatePeerConnectionTask(string id, bool call)
     {
-        // dataChannelの目的のキーが空になるまで待機
-        while (dataChannelDic.ContainsKey(id) == true) yield return null;
-
         Debug.Log(thisName + "create new peerConnection start");
 
         RTCConfiguration configuration = GetSelectedSdpSemantics();
@@ -192,8 +189,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             };
             dataChannelDic[id].OnClose = () => {
                 Debug.Log(thisName + id + ": DataChannel Close");
-                dataChannelDic.Remove(id);
-                dataChannelFlagDic.Remove(id);
             };
             dataChannelFlagDic[id] = false;
         }
@@ -206,11 +201,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
                 dataChannelFlagDic[id] = true;
                 dataChannelDic[id] = channel;
                 dataChannelDic[id].OnMessage = bytes => { onMessage.Invoke(userID, id, bytes); };
-                dataChannelDic[id].OnOpen = () => { };
                 dataChannelDic[id].OnClose = () => {
                     Debug.Log(thisName + id + ": DataChannel Close");
-                    dataChannelDic.Remove(id);
-                    dataChannelFlagDic.Remove(id);
                 };
             };
         }
@@ -218,13 +210,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private void CreatePeerConnection(string id, bool call)
     {
-        if (dataChannelDic.ContainsKey(id) == true)
-            dataChannelDic[id].Close();
-
-        if (peerConnectionDic.ContainsKey(id) == true)
-            peerConnectionDic[id].Close();
-
-        StartCoroutine(CreatePeerConnectionTask(id, call));
+        CreatePeerConnectionTask(id, call);
     }
 
     private RTCConfiguration GetSelectedSdpSemantics()
@@ -338,6 +324,12 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private IEnumerator Call(string dst)
     {
+        if (dataChannelDic.ContainsKey(dst) || dataChannelFlagDic.ContainsKey(dst) || peerConnectionDic.ContainsKey(dst))
+        {
+            Debug.LogError(thisName + "dst is already exist");
+            yield break;
+        }
+
         CreatePeerConnection(dst, true);
 
         Debug.Log(thisName + "pc createOffer start");
@@ -360,19 +352,82 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         return result;
     }
 
-    public void Hangup(string dst)
-    {
-        peerConnectionDic[dst].Close();
-        peerConnectionDic[dst] = null;
-        peerConnectionDic.Remove(dst);
-    }
-
     public void Join(string userID, string roomID)
     {
         this.userID = userID;
         this.roomID = roomID;
 
         SendWsMeg(TLabRTCSigAction.JOIN, null, null, null);
+    }
+
+    public void HangUp(string src)
+    {
+        // close datachannel befor offer
+        if (dataChannelDic.ContainsKey(src) == true)
+        {
+            dataChannelDic[src].Close();
+            dataChannelDic[src] = null;
+            dataChannelDic.Remove(src);
+        }
+
+        // datachannel flag delete
+        if (dataChannelFlagDic.ContainsKey(src) == true)
+            dataChannelFlagDic.Remove(src);
+
+        // close datachannel befor offer
+        if (peerConnectionDic.ContainsKey(src) == true)
+        {
+            peerConnectionDic[src].Close();
+            peerConnectionDic[src] = null;
+            peerConnectionDic.Remove(src);
+        }
+    }
+
+    public void HangUpAll()
+    {
+        // https://dobon.net/vb/dotnet/programing/dictionarytoarray.html
+
+        // close datachannel befor offer
+        if (dataChannelDic.Count > 0)
+        {
+            List<string> dsts = new List<string>(dataChannelDic.Keys);
+            foreach (string dst in dsts)
+            {
+                dataChannelDic[dst].Close();
+                dataChannelDic[dst] = null;
+                dataChannelDic.Remove(dst);
+            }
+        }
+
+        // datachannel flag delete
+        if(dataChannelFlagDic.Count > 0)
+        {
+            List<string> dsts = new List<string>(dataChannelFlagDic.Keys);
+            foreach (string dst in dsts)
+                dataChannelFlagDic.Remove(dst);
+        }
+
+        // close datachannel befor offer
+        if(peerConnectionDic.Count > 0)
+        {
+            List<string> dsts = new List<string>(peerConnectionDic.Keys);
+            foreach (string dst in dsts)
+            {
+                peerConnectionDic[dst].Close();
+                peerConnectionDic[dst] = null;
+                peerConnectionDic.Remove(dst);
+            }
+        }
+    }
+
+    public void Exit()
+    {
+        HangUpAll();
+
+        SendWsMeg(TLabRTCSigAction.EXIT, null, null, null);
+
+        this.userID = "";
+        this.roomID = "";
     }
 
     public void SendRTCMsg(byte[] bytes)
@@ -425,6 +480,9 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             case (int)TLabRTCSigAction.JOIN:
                 StartCoroutine(Call(parse.src));
                 break;
+            case (int)TLabRTCSigAction.EXIT:
+                HangUp(parse.src);
+                break;
         }
     }
     #endregion Utility
@@ -474,10 +532,9 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     private async void OnApplicationQuit()
     {
-        await m_websocket.Close();
+        Exit();
 
-        foreach (RTCDataChannel dataChannel in dataChannelDic.Values) dataChannel.Close();
-        foreach (RTCPeerConnection peerConnection in peerConnectionDic.Values) peerConnection.Close();
+        await m_websocket.Close();
     }
 }
 

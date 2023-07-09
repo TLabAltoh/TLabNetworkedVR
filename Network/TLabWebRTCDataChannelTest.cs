@@ -13,6 +13,11 @@ public class TLabWebRTCDataChannelTest : MonoBehaviour
         dataChannel.Join(userID, roomID);
     }
 
+    public void Exit()
+    {
+        dataChannel.Exit();
+    }
+
     public void SendMessageTest(string message)
     {
         dataChannel.SendRTCMsg(Encoding.UTF8.GetBytes(message));
