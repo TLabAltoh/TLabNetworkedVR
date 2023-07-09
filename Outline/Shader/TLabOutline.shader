@@ -62,6 +62,7 @@ Shader "TLab/TLabOutline"
 
         ENDCG
         */
+
         Pass
         {
             Name "OUTLINE"
@@ -104,24 +105,14 @@ Shader "TLab/TLabOutline"
             {
                 v2f o;
 
-				//o.pos = UnityObjectToClipPos(v.vertex);
+                float3 positionWS = mul(unity_ObjectToWorld, v.vertex);
+                float3 zOffset = normalize(positionWS - _WorldSpaceCameraPos) * _ZOffset;
+				o.pos = UnityWorldToClipPos(positionWS + zOffset);
 
-				//float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.color.rgb));
-				//float2 offset = TransformViewToProjection(norm.xy);
+				float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.color.rgb));
+				float3 offset = TransformViewToProjection(norm);
 
-				//o.pos.xy += offset * UNITY_Z_0_FAR_FROM_CLIPSPACE(o.pos.z) * _OutlineWidth;
-                //o.pos.xy += offset * _OutlineWidth;
-
-                float3 normalWS     = UnityObjectToWorldNormal( v.color.rgb );
-                float3 positionWS   = mul( unity_ObjectToWorld, v.vertex );
-
-                // normalWS * _OutlineWidth
-
-                float4 beforPos0    = UnityWorldToClipPos(positionWS);
-                float4 beforPos1    = UnityWorldToClipPos(positionWS + normalWS * _OutlineWidth);
-                float4 afterPos0    = UnityWorldToClipPos(positionWS + normalize(positionWS - _WorldSpaceCameraPos) * _ZOffset);
-                float4 afterPos1    = afterPos0 + (beforPos1 - beforPos0) * beforPos0.w;
-                o.pos = afterPos1;
+				o.pos.xyz += offset * UNITY_Z_0_FAR_FROM_CLIPSPACE(o.pos.z) * _OutlineWidth;
 
                 return o;
             }

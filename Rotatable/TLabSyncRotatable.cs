@@ -45,7 +45,7 @@ public class TLabSyncRotatable : TLabVRRotatable
             this.transform.rotation = Quaternion.AngleAxis(m_angle, m_axis) * this.transform.rotation;
             m_angle = Mathf.Clamp(m_angle - 0.1f * Time.deltaTime, 0, float.MaxValue);
 
-            m_syncGrabbable.SyncTransform();
+            m_syncGrabbable.SyncRTCTransform();
         }
         else
             m_angle = 0f;

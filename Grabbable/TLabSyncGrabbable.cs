@@ -1,3 +1,6 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -100,6 +103,31 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = true;
     }
 
+    private IEnumerator RegistRbObj()
+    {
+        // useGravity -> falseの場合，サーバーに登録しない
+        if (m_useGravity == false) yield break;
+
+        // Syncサーバーとの接続が確立するまで待機
+        while (TLabSyncClient.Instalce == null ||
+            TLabSyncClient.Instalce.SocketIsOpen == false ||
+            TLabSyncClient.Instalce.SeatIndex == -1) yield return null;
+
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role        = (int)WebRole.GUEST,
+            action      = (int)WebAction.REGISTRBOBJ,
+            transform   = new WebObjectInfo
+            {
+                id = this.gameObject.name
+            }
+        };
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+
+        Debug.Log(thisName + "Send Rb Obj");
+    }
+
     public void AllocateGravity(bool active)
     {
         m_rbAllocated = active;
@@ -109,7 +137,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         // ------> 重力計算を有効化
         SetGravity((m_grabbed == -1 && active) ? true : false);
 
-        Debug.Log(thisName + "rb allocated " + (m_grabbed == -1 && active) + "\t" + this.gameObject.name);
+        bool allocated = m_grabbed == -1 && active;
+        Debug.Log(thisName + "rb allocated:" + allocated + " - " + this.gameObject.name);
     }
 
     public void ForceReleaseSelf()
@@ -180,6 +209,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         if (m_rbAllocated == true) SetGravity(!active);
 
+        SyncTransform();
+
         TLabSyncJson obj = new TLabSyncJson
         {
             role        = (int)WebRole.GUEST,
@@ -243,6 +274,99 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         return base.AddParent(parent);
     }
 
+    #region SyncTransform
+    private unsafe void LongCopy(byte* src, byte* dst, int count)
+    {
+        // https://github.com/neuecc/MessagePack-CSharp/issues/117
+
+        while (count >= 8)
+        {
+            *(ulong*)dst = *(ulong*)src;
+            dst += 8;
+            src += 8;
+            count -= 8;
+        }
+        if (count >= 4)
+        {
+            *(uint*)dst = *(uint*)src;
+            dst += 4;
+            src += 4;
+            count -= 4;
+        }
+        if (count >= 2)
+        {
+            *(ushort*)dst = *(ushort*)src;
+            dst += 2;
+            src += 2;
+            count -= 2;
+        }
+        if (count >= 1)
+        {
+            *dst = *src;
+        }
+    }
+
+    /// <summary>
+    /// WebRTC
+    /// </summary>
+    public void SyncRTCTransform()
+    {
+        if (m_enableSync == false) return;
+
+        #region unsageコードを使用したパケットの生成
+
+        // transform
+        // (3 + 4 + 3) * 4 = 40 byte
+
+        // id
+        // 1 + (...)
+
+        float[] rtcTransform = new float[10];
+
+        rtcTransform[0] = this.transform.position.x;
+        rtcTransform[1] = this.transform.position.y;
+        rtcTransform[2] = this.transform.position.z;
+
+        rtcTransform[3] = this.transform.rotation.x;
+        rtcTransform[4] = this.transform.rotation.y;
+        rtcTransform[5] = this.transform.rotation.z;
+        rtcTransform[6] = this.transform.rotation.w;
+
+        rtcTransform[7] = this.transform.localScale.x;
+        rtcTransform[8] = this.transform.localScale.y;
+        rtcTransform[9] = this.transform.localScale.z;
+
+        byte[] id       = System.Text.Encoding.UTF8.GetBytes(this.gameObject.name);
+        byte[] packet   = new byte[1 + name.Length + rtcTransform.Length * sizeof(float)];
+
+        packet[0]   = (byte)name.Length;
+
+        int offset  = name.Length;
+        int nOffset = 1 + offset;
+        int dataLen = rtcTransform.Length * sizeof(float);
+
+        unsafe
+        {
+            // id
+            fixed (byte* iniP = packet, iniD = id)
+                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + nOffset; pt++, pd++) *pt = *pd;
+
+            // transform
+            fixed (byte*  iniP = packet)
+            fixed (float* iniD = &(rtcTransform[0]))
+                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pt = *pd;
+        }
+
+        #endregion unsageコードを使用したパケットの生成
+
+        TLabSyncClient.Instalce.SendRTCMessage(packet);
+
+        m_isSyncFromOutside = false;
+    }
+
+    /// <summary>
+    /// WebSocket
+    /// </summary>
     public void SyncTransform()
     {
         if (m_enableSync == false) return;
@@ -371,7 +495,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         m_isSyncFromOutside = false;
     }
+    #endregion SyncTransform
 
+    #region Divide
     public void OnDevideButtonClick()
     {
         Devide();
@@ -425,6 +551,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
     }
+    #endregion Divide
 
 #if UNITY_EDITOR
     protected override void TestFunc()
@@ -437,7 +564,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         base.Start();
 
+        // サーバーからRigidbody割り当てされるまで無効化する
         SetGravity(false);
+
+        // useGravity -> trueの場合，Syncサーバーにオブジェクトを登録
+        StartCoroutine(RegistRbObj());
+
+        // Syncクライアントに自分を登録
         TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 
@@ -453,13 +586,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
                 UpdatePosition();
             }
 
-            SyncTransform();
+            SyncRTCTransform();
         }
         else
         {
             m_scaleInitialDistance = -1.0f;
 
-            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncTransform();
+            if(m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncRTCTransform();
         }
     }
 
@@ -498,9 +631,9 @@ public class TLabSyncGrabbableEditor : Editor
         {
             // Grabbable
             // RigidbodyのUseGravityを無効化する
-            grabbable.m_enableSync = true;
-            grabbable.m_autoSync = false;
-            grabbable.m_locked = false;
+            grabbable.m_enableSync  = true;
+            grabbable.m_autoSync    = false;
+            grabbable.m_locked      = false;
             grabbable.UseRigidbody(false, false);
 
             if (grabbable.EnableDivide == true)
