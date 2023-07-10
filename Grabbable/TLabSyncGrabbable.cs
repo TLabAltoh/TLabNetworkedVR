@@ -574,7 +574,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
 public class TLabSyncGrabbableEditor : Editor
 {
-    private void InitializeForRotateble(ref TLabSyncGrabbable grabbable, ref TLabVRRotatable rotatable)
+    private void InitializeForRotateble(TLabSyncGrabbable grabbable, TLabVRRotatable rotatable)
     {
         grabbable.InitializeRotatable();
         EditorUtility.SetDirty(grabbable);
@@ -619,7 +619,7 @@ public class TLabSyncGrabbableEditor : Editor
         TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
         if (rotatable != null && GUILayout.Button("Initialize for Rotatable"))
-            InitializeForRotateble(ref grabbable, ref rotatable);
+            InitializeForRotateble(grabbable, rotatable);
 
         if (grabbable.EnableDivide == true && GUILayout.Button("Initialize for Devibable"))
         {
