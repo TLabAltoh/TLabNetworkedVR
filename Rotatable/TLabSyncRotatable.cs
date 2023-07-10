@@ -4,7 +4,6 @@ public class TLabSyncRotatable : TLabVRRotatable
 {
     private TLabSyncGrabbable m_syncGrabbable;
 
-
     protected override bool IsGrabbled
     {
         get

@@ -72,7 +72,7 @@ public class TLabVRGrabbable : MonoBehaviour
     [Header("Divided Settings")]
     [Tooltip("このコンポーネントが子階層にGrabberを束ねているか")]
     [SerializeField] protected bool m_enableDivide = false;
-    [SerializeField] protected GameObject[] m_divideAnchors;
+    [SerializeField] protected GameObject[] m_divideTargets;
 
     protected GameObject m_mainParent;
     protected GameObject m_subParent;
@@ -109,11 +109,11 @@ public class TLabVRGrabbable : MonoBehaviour
         }
     }
 
-    public GameObject[] DivideAnchors
+    public GameObject[] DivideTargets
     {
         get
         {
-            return m_divideAnchors;
+            return m_divideTargets;
         }
     }
 
@@ -481,6 +481,40 @@ public class TLabVRGrabbable : MonoBehaviour
 
 public class TLabVRGrabbableEditor : Editor
 {
+    private void InitializeForRotateble(TLabVRGrabbable grabbable, TLabVRRotatable rotatable)
+    {
+        grabbable.InitializeRotatable();
+        EditorUtility.SetDirty(grabbable);
+        EditorUtility.SetDirty(rotatable);
+    }
+
+    private void InitializeForDivibable(TLabVRGrabbable grabbable, bool isRoot)
+    {
+        // Grabbable
+        // RigidbodyのUseGravityを無効化する
+        grabbable.UseRigidbody(false, false);
+
+        // SetLayerMask
+        grabbable.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
+
+        // MeshFilter
+        MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
+        if (meshFilter == null) grabbable.gameObject.AddComponent<MeshFilter>();
+
+        // Rotatable
+        TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
+        if (rotatable == null) grabbable.gameObject.AddComponent<TLabVRRotatable>();
+
+        // MeshCollider
+        MeshCollider meshCollider = grabbable.gameObject.GetComponent<MeshCollider>();
+        if (meshCollider == null)
+            meshCollider = grabbable.gameObject.AddComponent<MeshCollider>();
+        meshCollider.enabled = isRoot;
+
+        EditorUtility.SetDirty(grabbable);
+        EditorUtility.SetDirty(rotatable);
+    }
+
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
@@ -492,79 +526,20 @@ public class TLabVRGrabbableEditor : Editor
         TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabVRRotatable>();
 
         if (rotatable != null && GUILayout.Button("Initialize for Rotatable"))
-        {
-            grabbable.InitializeRotatable();
-            EditorUtility.SetDirty(grabbable);
-            EditorUtility.SetDirty(rotatable);
-        }
+            InitializeForRotateble(grabbable, rotatable);
 
         if (grabbable.EnableDivide == true && GUILayout.Button("Initialize for Devibable"))
         {
-            // Grabbable
-            // RigidbodyのUseGravityを無効化する
-            grabbable.UseRigidbody(false, false);
+            InitializeForDivibable(grabbable, true);
 
-            if (grabbable.EnableDivide == true)
+            foreach (GameObject divideTarget in grabbable.DivideTargets)
             {
-                // If grabbable is enable devide
-                MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
-                if (meshFilter == null) grabbable.gameObject.AddComponent<MeshFilter>();
+                TLabVRGrabbable grabbableChild = divideTarget.GetComponent<TLabVRGrabbable>();
+                if (grabbableChild == null)
+                    grabbableChild = divideTarget.AddComponent<TLabVRGrabbable>();
+
+                InitializeForDivibable(grabbableChild, false);
             }
-            else
-            {
-                MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
-                if (meshFilter != null) Destroy(meshFilter);
-
-                MeshRenderer meshRenderer = grabbable.GetComponent<MeshRenderer>();
-                if (meshRenderer != null) Destroy(meshRenderer);
-            }
-
-            // SetLayerMask
-            grabbable.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
-
-            // Rotatable
-            if (rotatable == null) grabbable.gameObject.AddComponent<TLabSyncRotatable>();
-
-            // MeshCollider
-            MeshCollider meshCollider = grabbable.gameObject.GetComponent<MeshCollider>();
-            if (meshCollider == null)
-                meshCollider = grabbable.gameObject.AddComponent<MeshCollider>();
-            meshCollider.enabled = true;
-
-            EditorUtility.SetDirty(grabbable);
-            EditorUtility.SetDirty(rotatable);
-
-            // Childlen
-
-            foreach (GameObject divideAnchor in grabbable.DivideAnchors)
-                foreach (Transform grabbableChildTransform in divideAnchor.GetComponentsInChildren<Transform>())
-                {
-                    if (grabbableChildTransform.gameObject == divideAnchor.gameObject)  continue;
-                    if (grabbableChildTransform.gameObject.activeSelf == false)         continue;
-
-                    // Grabbable
-                    TLabVRGrabbable grabbableChild = grabbableChildTransform.gameObject.GetComponent<TLabVRGrabbable>();
-                    if (grabbableChild == null)
-                        grabbableChild = grabbableChildTransform.gameObject.AddComponent<TLabVRGrabbable>();
-
-                    // SetLayerMask
-                    grabbableChild.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
-
-                    // Rotatable
-                    grabbableChild.UseRigidbody(false, false);
-
-                    TLabVRRotatable rotatableChild = grabbableChild.gameObject.GetComponent<TLabVRRotatable>();
-                    if (rotatableChild == null) rotatableChild = grabbableChild.gameObject.AddComponent<TLabVRRotatable>();
-
-                    // MeshCollider
-                    MeshCollider meshColliderChild = grabbableChildTransform.gameObject.GetComponent<MeshCollider>();
-                    if (meshColliderChild == null)
-                        meshColliderChild = grabbableChildTransform.gameObject.AddComponent<MeshCollider>();
-                    meshColliderChild.enabled = false;
-
-                    EditorUtility.SetDirty(grabbableChild);
-                    EditorUtility.SetDirty(rotatable);
-                }
         }
 
         serializedObject.ApplyModifiedProperties();

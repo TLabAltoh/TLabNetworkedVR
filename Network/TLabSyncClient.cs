@@ -695,10 +695,28 @@ public class TLabSyncClient : MonoBehaviour
     }
     #endregion RTCMessage
 
-    /// <summary>
-    /// Websocket
-    /// </summary>
-    /// <param name="json"></param>
+    public void SendWsMessage(
+        WebRole role, WebAction action,
+        int seatIndex = -1, bool active = false,
+        WebObjectInfo transform = null, WebAnimInfo animator = null,
+        int customIndex = -1, string custom = "")
+    {
+        TLabSyncJson obj = new TLabSyncJson();
+
+        obj.role = (int)role;
+        obj.action = (int)action;
+        obj.seatIndex = seatIndex;
+        obj.active = active;
+        obj.customIndex = customIndex;
+        obj.custom = custom;
+
+        if (transform != null) obj.transform = transform;
+        if (animator != null) obj.animator = animator;
+
+        string json = JsonUtility.ToJson(obj);
+        SendWsMessage(json);
+    }
+
     public async void SendWsMessage(string json)
     {
         if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
