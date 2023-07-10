@@ -656,13 +656,15 @@ public class TLabSyncClient : MonoBehaviour
         {
             // id
             fixed (byte* iniP = nameBytes, iniD = bytes)
-                for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
+            {
+                //for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
+                LongCopy(iniD + 1, iniP, offset);
+            }
         }
 
         string targetName = System.Text.Encoding.UTF8.GetString(nameBytes);
 
         TLabSyncGrabbable grabbable = m_grabbables[targetName] as TLabSyncGrabbable;
-
         if (grabbable == null) return;
 
         float[] rtcTransform = new float[10];
@@ -672,7 +674,10 @@ public class TLabSyncClient : MonoBehaviour
             // transform
             fixed (byte* iniP = bytes)
             fixed (float* iniD = &(rtcTransform[0]))
-                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
+            {
+                //for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
+                LongCopy(iniP + nOffset, (byte*)iniD, dataLen);
+            }
         }
 
         WebObjectInfo webTransform = new WebObjectInfo
@@ -695,23 +700,23 @@ public class TLabSyncClient : MonoBehaviour
     }
     #endregion RTCMessage
 
+    #region SendWebsocketMessage
     public void SendWsMessage(
-        WebRole role, WebAction action,
-        int seatIndex = -1, bool active = false,
+        WebRole role, WebAction action, int seatIndex = -1, bool active = false,
         WebObjectInfo transform = null, WebAnimInfo animator = null,
         int customIndex = -1, string custom = "")
     {
-        TLabSyncJson obj = new TLabSyncJson();
-
-        obj.role = (int)role;
-        obj.action = (int)action;
-        obj.seatIndex = seatIndex;
-        obj.active = active;
-        obj.customIndex = customIndex;
-        obj.custom = custom;
-
-        if (transform != null) obj.transform = transform;
-        if (animator != null) obj.animator = animator;
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)role,
+            action = (int)action,
+            seatIndex = seatIndex,
+            active = active,
+            transform = transform,
+            animator = animator,
+            customIndex = customIndex,
+            custom = custom
+        };
 
         string json = JsonUtility.ToJson(obj);
         SendWsMessage(json);
@@ -721,6 +726,7 @@ public class TLabSyncClient : MonoBehaviour
     {
         if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
     }
+    #endregion SendWebsocketMessage
 
     void Awake()
     {

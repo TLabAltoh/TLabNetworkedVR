@@ -4,6 +4,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using static TLabVRGrabber.Utility.TLabComponentExtention;
 
 public class TLabSyncGrabbable : TLabVRGrabbable
 {
@@ -118,7 +119,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         while (SocketIsOpen == false) yield return null;
 
         TLabSyncClient.Instalce.SendWsMessage(
-            WebRole.GUEST, WebAction.REGISTRBOBJ,
+            role: WebRole.GUEST, action: WebAction.REGISTRBOBJ,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
         Debug.Log(thisName + "Send Rb Obj");
@@ -166,7 +167,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         ForceReleaseSelf();
 
         TLabSyncClient.Instalce.SendWsMessage(
-            WebRole.GUEST, WebAction.FORCERELEASE,
+            role: WebRole.GUEST, action: WebAction.FORCERELEASE,
             transform : new WebObjectInfo { id = this.gameObject.name });
 
         Debug.Log(thisName + "force release");
@@ -200,9 +201,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         SyncTransform();
 
         TLabSyncClient.Instalce.SendWsMessage(
-            WebRole.GUEST, WebAction.GRABBLOCK,
-            transform: new WebObjectInfo { id = this.gameObject.name },
-            seatIndex: active ? TLabSyncClient.Instalce.SeatIndex : -1);
+            role: WebRole.GUEST, action: WebAction.GRABBLOCK,
+            seatIndex: active ? TLabSyncClient.Instalce.SeatIndex : -1,
+            transform: new WebObjectInfo { id = this.gameObject.name });
 
         Debug.Log(thisName + "grabb lock");
     }
@@ -223,7 +224,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (m_rbAllocated) SetGravity(!active);
 
         TLabSyncClient.Instalce.SendWsMessage(
-            WebRole.GUEST, WebAction.GRABBLOCK,
+            role: WebRole.GUEST, action: WebAction.GRABBLOCK,
             seatIndex: active ? -2 : -1,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
@@ -321,12 +322,18 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             // id
             fixed (byte* iniP = packet, iniD = id)
-                for (byte* pt = iniP + 1, pd = iniD; pt < iniP + nOffset; pt++, pd++) *pt = *pd;
+            {
+                //for (byte* pt = iniP + 1, pd = iniD; pt < iniP + nOffset; pt++, pd++) *pt = *pd;
+                LongCopy(iniD, iniP + 1, nOffset);
+            }
 
             // transform
             fixed (byte* iniP = packet)
             fixed (float* iniD = &(rtcTransform[0]))
-                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pt = *pd;
+            {
+                //for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pt = *pd;
+                LongCopy((byte*)iniD, iniP + nOffset, dataLen);
+            }
         }
 
         #endregion unsageコードを使用したパケットの生成
@@ -483,7 +490,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     public override int Devide()
     {
         // 分割/結合処理
-
         int result = base.Devide();
 
         if (result < 0) return -1;
@@ -491,14 +497,12 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         bool active = result == 0 ? true : false;
 
         // 結合/分割を切り替えたので，誰もこのオブジェクトを掴んでいない状態にする
-
-        TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
+        TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.ForceRelease();
 
         // オブジェクトの分割を通知
-
         TLabSyncClient.Instalce.SendWsMessage(
-            WebRole.GUEST, WebAction.DIVIDEGRABBER,
+            role: WebRole.GUEST, action: WebAction.DIVIDEGRABBER,
             active: active,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
@@ -511,7 +515,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         if (m_enableDivide == false) return;
 
-        TLabSyncGrabbable[] grabbables = this.gameObject.GetComponentsInChildren<TLabSyncGrabbable>();
+        TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
     }
     #endregion Divide
@@ -583,26 +587,17 @@ public class TLabSyncGrabbableEditor : Editor
 
     private void InitializeForDivibable(TLabSyncGrabbable grabbable, bool isRoot)
     {
-        // Grabbable
         // RigidbodyのUseGravityを無効化する
         grabbable.m_enableSync = true;
         grabbable.m_autoSync = false;
         grabbable.m_locked = false;
         grabbable.UseRigidbody(false, false);
 
-        // SetLayerMask
         grabbable.gameObject.layer = LayerMask.NameToLayer("TLabGrabbable");
 
-        MeshFilter meshFilter = grabbable.GetComponent<MeshFilter>();
-        if (meshFilter == null) grabbable.gameObject.AddComponent<MeshFilter>();
-
-        // Rotatable
-        TLabVRRotatable rotatable = grabbable.gameObject.GetComponent<TLabSyncRotatable>();
-        if (rotatable == null) grabbable.gameObject.AddComponent<TLabSyncRotatable>();
-
-        // MeshCollider
-        MeshCollider meshCollider = grabbable.gameObject.GetComponent<MeshCollider>();
-        if (meshCollider == null) meshCollider = grabbable.gameObject.AddComponent<MeshCollider>();
+        var meshFilter = grabbable.gameObject.RequireComponent<MeshFilter>();
+        var rotatable = grabbable.gameObject.RequireComponent<TLabSyncRotatable>();
+        var meshCollider = grabbable.gameObject.RequireComponent<MeshCollider>();
         meshCollider.enabled = isRoot;
 
         EditorUtility.SetDirty(grabbable);
@@ -627,10 +622,7 @@ public class TLabSyncGrabbableEditor : Editor
 
             foreach(GameObject divideTarget in grabbable.DivideTargets)
             {
-                TLabSyncGrabbable grabbableChild = divideTarget.GetComponent<TLabSyncGrabbable>();
-                if (grabbableChild == null)
-                    grabbableChild = divideTarget.AddComponent<TLabSyncGrabbable>();
-
+                var grabbableChild = divideTarget.gameObject.RequireComponent<TLabSyncGrabbable>();
                 InitializeForDivibable(grabbableChild, false);
             }
         }
