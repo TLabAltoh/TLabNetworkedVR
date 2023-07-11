@@ -530,7 +530,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 #endif
     }
 
-    private async void OnApplicationQuit()
+    private async void OnDestroy()
     {
         Exit();
 
