@@ -4,7 +4,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using static TLabVRGrabber.Utility.TLabComponentExtention;
+using static TLab.VRGrabber.Utility.ComponentExtention;
 
 public class TLabSyncGrabbable : TLabVRGrabbable
 {

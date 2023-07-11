@@ -33,7 +33,8 @@ public class TLabSyncRotatable : TLabVRRotatable
 
     protected override void Start()
     {
-        base.Start();
+        m_syncGrabbable = GetComponent<TLabSyncGrabbable>();
+        if (m_syncGrabbable == null) Destroy(this);
     }
 
     protected override void Update()

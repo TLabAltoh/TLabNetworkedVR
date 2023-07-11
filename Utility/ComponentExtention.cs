@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TLabVRGrabber.Utility
+namespace TLab.VRGrabber.Utility
 {
-    public static class TLabComponentExtention
+    public static class ComponentExtention
     {
         public static T[] GetComponentsInTargets<T>(GameObject[] targets) where T : Component
         {
