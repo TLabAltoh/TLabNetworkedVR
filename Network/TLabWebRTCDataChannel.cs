@@ -539,6 +539,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         m_websocket = null;
     }
 
+    private void OnDestroy()
+    {
+        Close();
+    }
+
     private void OnApplicationQuit()
     {
         Close();

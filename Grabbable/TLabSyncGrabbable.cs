@@ -563,7 +563,7 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    private void OnDestroy()
+    private void DestoryGrabber()
     {
         if (SocketIsOpen == false) return;
 
@@ -571,6 +571,16 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
             m_grabbed != -1 &&
             m_grabbed != -2) GrabbLock(false);
+    }
+
+    private void OnDestroy()
+    {
+        DestoryGrabber();
+    }
+
+    private void OnApplicationQuit()
+    {
+        DestoryGrabber();
     }
 }
 

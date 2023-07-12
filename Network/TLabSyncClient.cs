@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
@@ -206,7 +205,7 @@ public class TLabSyncClient : MonoBehaviour
     private WebSocket websocket;
     private int m_seatIndex = -1;
     private bool[] m_guestTable = new bool[SEAT_LENGTH];
-    private const int SEAT_LENGTH = 4;
+    private const int SEAT_LENGTH = 5;
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -219,6 +218,14 @@ public class TLabSyncClient : MonoBehaviour
         get
         {
             return m_grabbables;
+        }
+    }
+
+    public Hashtable Animators
+    {
+        get
+        {
+            return m_animators;
         }
     }
 
@@ -256,7 +263,36 @@ public class TLabSyncClient : MonoBehaviour
         return m_guestTable[index];
     }
 
-    #region AddSyncTarget
+    #region SyncTargetUtility
+    private List<K> GetHashTableKeys<K>(Hashtable hashTable)
+    {
+        List<K> keys = new List<K>();
+        foreach (K key in hashTable.Keys) keys.Add(key);
+
+        return keys;
+    }
+
+    private void DestoryHashTable<K, V>(Hashtable hashTable) where K : class where V : Component
+    {
+        List<K> keys = GetHashTableKeys<K>(hashTable);
+        foreach(K key in keys)
+        {
+            V target = hashTable[key] as V;
+            Object.Destroy(target);
+            hashTable.Remove(key);
+        }
+    }
+
+    public void RemoveAllGrabbers()
+    {
+        DestoryHashTable<string, TLabSyncGrabbable>(m_grabbables);
+    }
+
+    public void RemoveAllAnimators()
+    {
+        DestoryHashTable<string, TLabSyncAnim>(m_animators);
+    }
+
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
     {
         m_grabbables[name] = grabbable;
@@ -266,7 +302,17 @@ public class TLabSyncClient : MonoBehaviour
     {
         m_animators[name] = syncAnim;
     }
-    #endregion AddSyncTarget
+
+    public void RemoveGrabber(string name)
+    {
+        m_grabbables.Remove(name);
+    }
+
+    public void RemoveAnimator(string name)
+    {
+        m_animators.Remove(name);
+    }
+    #endregion SyncTargetUtility
 
     #region Reflesh
     /// <summary>
@@ -745,6 +791,11 @@ public class TLabSyncClient : MonoBehaviour
         dataChannel.Close();
 
         if (websocket != null) await websocket.Close();
+    }
+
+    public void OnDestroy()
+    {
+        Close();
     }
 
     private void OnApplicationQuit()
