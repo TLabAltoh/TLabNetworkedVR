@@ -246,12 +246,10 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
-#if UNITY_EDITOR
     public void SetServerAddr(string addr)
     {
         m_serverAddr = addr;
     }
-#endif
 
     public bool IsGuestExist(int index)
     {
@@ -742,8 +740,15 @@ public class TLabSyncClient : MonoBehaviour
 #endif
     }
 
-    private async void OnApplicationQuit()
+    public async void Close()
     {
+        dataChannel.Close();
+
         if (websocket != null) await websocket.Close();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Close();
     }
 }

@@ -112,7 +112,7 @@ Shader "TLab/TLabOutline"
 				float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.color.rgb));
 				float3 offset = TransformViewToProjection(norm);
 
-				o.pos.xyz += offset * UNITY_Z_0_FAR_FROM_CLIPSPACE(o.pos.z) * _OutlineWidth;
+				o.pos.xyz += offset.xyz * UNITY_Z_0_FAR_FROM_CLIPSPACE(o.pos.z) * _OutlineWidth;
 
                 return o;
             }

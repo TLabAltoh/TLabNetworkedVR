@@ -62,12 +62,10 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
 
-#if UNITY_EDITOR
     public void SetSignalingServerAddr(string addr)
     {
         serverAddr = addr;
     }
-#endif
 
     #region ICE Candidate
     private void AddIceCandidate(string src, TLabRTCICE tlabIce)
@@ -530,11 +528,20 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 #endif
     }
 
-    private async void OnDestroy()
+    public async void Close()
     {
+        if (m_websocket == null) return;
+
         Exit();
 
         await m_websocket.Close();
+
+        m_websocket = null;
+    }
+
+    private void OnApplicationQuit()
+    {
+        Close();
     }
 }
 

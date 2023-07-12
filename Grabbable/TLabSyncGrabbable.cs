@@ -565,6 +565,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private void OnDestroy()
     {
+        if (SocketIsOpen == false) return;
+
         // このオブジェクトをロックしているのが自分だったら解除する
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
             m_grabbed != -1 &&
