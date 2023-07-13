@@ -528,20 +528,14 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 #endif
     }
 
-    public async void Close()
+    public void Close()
     {
-        if (m_websocket == null) return;
-
         Exit();
-
-        await m_websocket.Close();
-
-        m_websocket = null;
     }
 
-    private void OnDestroy()
+    private async void OnDestroy()
     {
-        Close();
+        await m_websocket.Close();
     }
 
     private void OnApplicationQuit()

@@ -786,20 +786,20 @@ public class TLabSyncClient : MonoBehaviour
 #endif
     }
 
-    public async void Close()
+    public void Close()
     {
         dataChannel.Close();
+    }
 
+    public async void OnDestroy()
+    {
         if (websocket != null) await websocket.Close();
+        websocket = null;
     }
 
-    public void OnDestroy()
+    private async void OnApplicationQuit()
     {
-        Close();
-    }
-
-    private void OnApplicationQuit()
-    {
-        Close();
+        if (websocket != null) await websocket.Close();
+        websocket = null;
     }
 }
