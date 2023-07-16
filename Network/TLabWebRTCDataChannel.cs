@@ -234,6 +234,15 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         return config;
     }
 
+    private TLabRTCDesc GetTLabRTCDesc(RTCSessionDescription desc)
+    {
+        TLabRTCDesc tlabDesc = new TLabRTCDesc();
+        tlabDesc.type = (int)desc.type;
+        tlabDesc.sdp = desc.sdp;
+
+        return tlabDesc;
+    }
+
     private IEnumerator OnAnswer(string src, RTCSessionDescription desc)
     {
         Debug.Log(thisName + "peerConnection.setRemoteDescription start");
@@ -270,11 +279,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
         Debug.Log(thisName + "peerConnection send local description start");
 
-        TLabRTCDesc tlabDesc = new TLabRTCDesc();
-        tlabDesc.type = (int)desc.type;
-        tlabDesc.sdp = desc.sdp;
-
-        SendWsMeg(TLabRTCSigAction.ANSWER, tlabDesc, null, dst);
+        SendWsMeg(TLabRTCSigAction.ANSWER, GetTLabRTCDesc(desc), null, dst);
     }
 
     private IEnumerator OnOffer(string src, RTCSessionDescription desc)
@@ -325,11 +330,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
         Debug.Log(thisName + "pc send local description start");
 
-        TLabRTCDesc tlabDesc = new TLabRTCDesc();
-        tlabDesc.type = (int)desc.type;
-        tlabDesc.sdp = desc.sdp;
-
-        SendWsMeg(TLabRTCSigAction.OFFER, tlabDesc, null, dst);
+        SendWsMeg(TLabRTCSigAction.OFFER, GetTLabRTCDesc(desc), null, dst);
     }
 
     private IEnumerator Call(string dst)
