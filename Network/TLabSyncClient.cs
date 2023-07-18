@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
@@ -206,7 +205,7 @@ public class TLabSyncClient : MonoBehaviour
     private WebSocket websocket;
     private int m_seatIndex = -1;
     private bool[] m_guestTable = new bool[SEAT_LENGTH];
-    private const int SEAT_LENGTH = 4;
+    private const int SEAT_LENGTH = 5;
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -219,6 +218,14 @@ public class TLabSyncClient : MonoBehaviour
         get
         {
             return m_grabbables;
+        }
+    }
+
+    public Hashtable Animators
+    {
+        get
+        {
+            return m_animators;
         }
     }
 
@@ -246,19 +253,46 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
-#if UNITY_EDITOR
     public void SetServerAddr(string addr)
     {
         m_serverAddr = addr;
     }
-#endif
 
     public bool IsGuestExist(int index)
     {
         return m_guestTable[index];
     }
 
-    #region AddSyncTarget
+    #region SyncTargetUtility
+    private List<K> GetHashTableKeys<K>(Hashtable hashTable)
+    {
+        List<K> keys = new List<K>();
+        foreach (K key in hashTable.Keys) keys.Add(key);
+
+        return keys;
+    }
+
+    private void DestoryHashTable<K, V>(Hashtable hashTable) where K : class where V : Component
+    {
+        List<K> keys = GetHashTableKeys<K>(hashTable);
+        foreach(K key in keys)
+        {
+            V target = hashTable[key] as V;
+            Object.Destroy(target);
+            hashTable.Remove(key);
+        }
+    }
+
+    public void RemoveAllGrabbers()
+    {
+        DestoryHashTable<string, TLabSyncGrabbable>(m_grabbables);
+    }
+
+    public void RemoveAllAnimators()
+    {
+        DestoryHashTable<string, TLabSyncAnim>(m_animators);
+    }
+
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
     {
         m_grabbables[name] = grabbable;
@@ -268,7 +302,17 @@ public class TLabSyncClient : MonoBehaviour
     {
         m_animators[name] = syncAnim;
     }
-    #endregion AddSyncTarget
+
+    public void RemoveGrabber(string name)
+    {
+        m_grabbables.Remove(name);
+    }
+
+    public void RemoveAnimator(string name)
+    {
+        m_animators.Remove(name);
+    }
+    #endregion SyncTargetUtility
 
     #region Reflesh
     /// <summary>
@@ -656,13 +700,15 @@ public class TLabSyncClient : MonoBehaviour
         {
             // id
             fixed (byte* iniP = nameBytes, iniD = bytes)
-                for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
+            {
+                //for (byte* pt = iniP, pd = iniD + 1; pt < iniP + offset; pt++, pd++) *pt = *pd;
+                LongCopy(iniD + 1, iniP, offset);
+            }
         }
 
         string targetName = System.Text.Encoding.UTF8.GetString(nameBytes);
 
         TLabSyncGrabbable grabbable = m_grabbables[targetName] as TLabSyncGrabbable;
-
         if (grabbable == null) return;
 
         float[] rtcTransform = new float[10];
@@ -672,7 +718,10 @@ public class TLabSyncClient : MonoBehaviour
             // transform
             fixed (byte* iniP = bytes)
             fixed (float* iniD = &(rtcTransform[0]))
-                for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
+            {
+                //for (byte* pt = iniP + nOffset, pd = (byte*)iniD; pt < iniP + nOffset + dataLen; pt++, pd++) *pd = *pt;
+                LongCopy(iniP + nOffset, (byte*)iniD, dataLen);
+            }
         }
 
         WebObjectInfo webTransform = new WebObjectInfo
@@ -695,14 +744,33 @@ public class TLabSyncClient : MonoBehaviour
     }
     #endregion RTCMessage
 
-    /// <summary>
-    /// Websocket
-    /// </summary>
-    /// <param name="json"></param>
+    #region SendWebsocketMessage
+    public void SendWsMessage(
+        WebRole role, WebAction action, int seatIndex = -1, bool active = false,
+        WebObjectInfo transform = null, WebAnimInfo animator = null,
+        int customIndex = -1, string custom = "")
+    {
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)role,
+            action = (int)action,
+            seatIndex = seatIndex,
+            active = active,
+            transform = transform,
+            animator = animator,
+            customIndex = customIndex,
+            custom = custom
+        };
+
+        string json = JsonUtility.ToJson(obj);
+        SendWsMessage(json);
+    }
+
     public async void SendWsMessage(string json)
     {
         if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
     }
+    #endregion SendWebsocketMessage
 
     void Awake()
     {
@@ -718,8 +786,20 @@ public class TLabSyncClient : MonoBehaviour
 #endif
     }
 
+    public void Close()
+    {
+        dataChannel.Close();
+    }
+
+    public async void OnDestroy()
+    {
+        if (websocket != null) await websocket.Close();
+        websocket = null;
+    }
+
     private async void OnApplicationQuit()
     {
         if (websocket != null) await websocket.Close();
+        websocket = null;
     }
 }

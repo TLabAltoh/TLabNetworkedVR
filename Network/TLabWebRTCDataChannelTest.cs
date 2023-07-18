@@ -8,7 +8,7 @@ public class TLabWebRTCDataChannelTest : MonoBehaviour
     [SerializeField] private string userID;
     [SerializeField] private string roomID;
 
-    public void Join( )
+    public void Join()
     {
         dataChannel.Join(userID, roomID);
     }
@@ -27,5 +27,10 @@ public class TLabWebRTCDataChannelTest : MonoBehaviour
     {
         string receive = Encoding.UTF8.GetString(bytes);
         Debug.Log(src + " ===> " + dst + ": " + receive + ", " + "len: " + bytes.Length.ToString());
+    }
+
+    private void OnDestroy()
+    {
+        dataChannel.Exit();
     }
 }

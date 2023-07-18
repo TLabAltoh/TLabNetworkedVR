@@ -4,10 +4,10 @@ using UnityEngine.EventSystems;
 using UnityEditor;
 #endif
 
-#if UNITY_EDITOR
 public class TLabVRHandManager : MonoBehaviour
 {
     #region
+#if UNITY_EDITOR
     public OVRProjectConfig ProjectConfig
     {
         get
@@ -15,6 +15,7 @@ public class TLabVRHandManager : MonoBehaviour
             return m_projectConfig;
         }
     }
+#endif
 
     public TLabOVRInputModule InputModule
     {
@@ -105,7 +106,9 @@ public class TLabVRHandManager : MonoBehaviour
     }
     #endregion
 
+#if UNITY_EDITOR
     [SerializeField] private OVRProjectConfig m_projectConfig;
+#endif
 
     [SerializeField] private TLabOVRInputModule m_inputModule;
 
@@ -131,6 +134,7 @@ public class TLabVRHandManager : MonoBehaviour
     }
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(TLabVRHandManager))]
 [CanEditMultipleObjects]
 public class TLabVRHandManagerEditor: Editor
