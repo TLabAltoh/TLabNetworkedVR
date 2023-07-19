@@ -391,11 +391,17 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             dataChannelDic[src].Close();
             dataChannelDic[src] = null;
             dataChannelDic.Remove(src);
+
+            Debug.Log(thisName + "hung up datachannel: " + src);
         }
 
         // datachannel flag delete
         if (dataChannelFlagDic.ContainsKey(src) == true)
+        {
             dataChannelFlagDic.Remove(src);
+
+            Debug.Log(thisName + "remove datachannle flag: " + src);
+        }
 
         // close datachannel befor offer
         if (peerConnectionDic.ContainsKey(src) == true)
@@ -403,12 +409,15 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             peerConnectionDic[src].Close();
             peerConnectionDic[src] = null;
             peerConnectionDic.Remove(src);
+
+            Debug.Log(thisName + "remove peerconnection: " + src);
         }
     }
 
     public void HangUpAll()
     {
         // https://dobon.net/vb/dotnet/programing/dictionarytoarray.html
+        // https://ja.stackoverflow.com/questions/10119/foreach%E6%96%87%E3%81%A7%E4%B8%AD%E8%BA%AB%E3%81%AE%E5%87%A6%E7%90%86%E4%B8%AD%E3%81%AB%E6%AF%8D%E9%9B%86%E5%90%88%E5%81%B4%E3%81%8C%E5%A4%89%E5%8C%96%E3%81%99%E3%82%8B%E3%81%A8movenext%E3%81%A7%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B
 
         // close datachannel befor offer
         if (dataChannelDic.Count > 0)
@@ -419,6 +428,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
                 dataChannelDic[dst].Close();
                 dataChannelDic[dst] = null;
                 dataChannelDic.Remove(dst);
+                Debug.Log(thisName + "hung up datachannel: " + dst);
             }
         }
 
@@ -427,7 +437,10 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         {
             List<string> dsts = new List<string>(dataChannelFlagDic.Keys);
             foreach (string dst in dsts)
+            {
                 dataChannelFlagDic.Remove(dst);
+                Debug.Log(thisName + "remove datachannle flag: " + dst);
+            }
         }
 
         // close datachannel befor offer
@@ -439,6 +452,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
                 peerConnectionDic[dst].Close();
                 peerConnectionDic[dst] = null;
                 peerConnectionDic.Remove(dst);
+                Debug.Log(thisName + "remove peerconnection: " + dst);
             }
         }
     }
@@ -467,7 +481,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         TLabRTCSigAction action,
         TLabRTCDesc desc, TLabRTCICE ice, string dst)
     {
-        if (m_websocket.State == WebSocketState.Open)
+        if (m_websocket != null && m_websocket.State == WebSocketState.Open)
         {
             TLabRTCSigJson obj = new TLabRTCSigJson();
             obj.src = userID;
@@ -513,7 +527,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     private async void Start()
     {
         Debug.Log(thisName + "create call back start");
-
         Debug.Log(thisName + "connect to signaling server start");
 
         m_websocket = new WebSocket(serverAddr);
@@ -553,19 +566,20 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 #endif
     }
 
-    public void Close()
-    {
-        Exit();
-    }
-
     private async void OnDestroy()
     {
-        await m_websocket.Close();
+        if(m_websocket != null)
+            await m_websocket.Close();
+
+        m_websocket = null;
     }
 
-    private void OnApplicationQuit()
+    private async void OnApplicationQuit()
     {
-        Close();
+        if (m_websocket != null)
+            await m_websocket.Close();
+
+        m_websocket = null;
     }
 }
 
