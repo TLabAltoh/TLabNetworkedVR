@@ -277,8 +277,11 @@ public class TLabSyncClient : MonoBehaviour
         List<K> keys = GetHashTableKeys<K>(hashTable);
         foreach(K key in keys)
         {
-            V target = hashTable[key] as V;
-            Object.Destroy(target);
+            if(hashTable[key] != null)
+            {
+                V target = hashTable[key] as V;
+                Object.Destroy(target);
+            }
             hashTable.Remove(key);
         }
     }
