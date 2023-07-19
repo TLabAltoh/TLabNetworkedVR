@@ -768,27 +768,30 @@ public class TLabSyncClient : MonoBehaviour
 
     public async void SendWsMessage(string json)
     {
-        if (websocket.State == WebSocketState.Open) await websocket.SendText(json);
+        if (websocket != null && websocket.State == WebSocketState.Open)
+            await websocket.SendText(json);
     }
     #endregion SendWebsocketMessage
+
+    public void CloseRTC()
+    {
+        dataChannel.Exit();
+    }
 
     void Awake()
     {
         Instalce = this;
 
-        if (dataChannel == null) dataChannel = this.gameObject.GetComponent<TLabWebRTCDataChannel>();
+        if (dataChannel == null)
+            dataChannel = GetComponent<TLabWebRTCDataChannel>();
     }
 
     void Update()
     {
 #if !UNITY_WEBGL || UNITY_EDITOR
-        if (websocket != null) websocket.DispatchMessageQueue();
+        if (websocket != null)
+            websocket.DispatchMessageQueue();
 #endif
-    }
-
-    public void Close()
-    {
-        dataChannel.Close();
     }
 
     public async void OnDestroy()

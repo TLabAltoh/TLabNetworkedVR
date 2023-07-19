@@ -28,9 +28,4 @@ public class TLabWebRTCDataChannelTest : MonoBehaviour
         string receive = Encoding.UTF8.GetString(bytes);
         Debug.Log(src + " ===> " + dst + ": " + receive + ", " + "len: " + bytes.Length.ToString());
     }
-
-    private void OnDestroy()
-    {
-        dataChannel.Exit();
-    }
 }
