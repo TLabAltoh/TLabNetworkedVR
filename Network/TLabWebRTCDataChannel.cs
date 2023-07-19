@@ -194,11 +194,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             dataChannelDic[dst] = peerConnectionDic[dst].CreateDataChannel("data", conf);
             dataChannelDic[dst].OnMessage = bytes => { onMessage.Invoke(userID, dst, bytes); };
             dataChannelDic[dst].OnOpen = () => {
-                Debug.Log(thisName + id + ": DataChannel Open");
+                Debug.Log(thisName + dst + ": DataChannel Open");
                 dataChannelFlagDic[dst] = true;
             };
             dataChannelDic[dst].OnClose = () => {
-                Debug.Log(thisName + id + ": DataChannel Close");
+                Debug.Log(thisName + dst + ": DataChannel Close");
             };
             dataChannelFlagDic[dst] = false;
         }
@@ -212,7 +212,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
                 dataChannelDic[dst] = channel;
                 dataChannelDic[dst].OnMessage = bytes => { onMessage.Invoke(userID, dst, bytes); };
                 dataChannelDic[dst].OnClose = () => {
-                    Debug.Log(thisName + id + ": DataChannel Close");
+                    Debug.Log(thisName + dst + ": DataChannel Close");
                 };
             };
         }
@@ -472,8 +472,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         foreach(string id in dataChannelDic.Keys)
         {
             RTCDataChannel dataChannel = dataChannelDic[id];
-
-            if (dataChannelFlagDic[id] == true) dataChannel.Send(bytes);
+            if (dataChannelFlagDic[id] == true)
+                dataChannel.Send(bytes);
         }
     }
 
