@@ -571,11 +571,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         if (SocketIsOpen == false) return;
 
+        SetInitialChildTransform();
+
         // このオブジェクトをロックしているのが自分だったら解除する
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
             m_grabbed != -1 &&
             m_grabbed != -2) GrabbLock(false);
 
+        m_shutdown = true;
         m_enableSync = false;
     }
 
