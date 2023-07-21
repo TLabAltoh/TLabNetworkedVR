@@ -264,36 +264,20 @@ public class TLabSyncClient : MonoBehaviour
     }
 
     #region SyncTargetUtility
-    private List<K> GetHashTableKeys<K>(Hashtable hashTable)
-    {
-        List<K> keys = new List<K>();
-        foreach (K key in hashTable.Keys) keys.Add(key);
-
-        return keys;
-    }
-
-    private void DestoryHashTable<K, V>(Hashtable hashTable) where K : class where V : Component
-    {
-        List<K> keys = GetHashTableKeys<K>(hashTable);
-        foreach(K key in keys)
-        {
-            if(hashTable[key] != null)
-            {
-                V target = hashTable[key] as V;
-                Object.Destroy(target);
-            }
-            hashTable.Remove(key);
-        }
-    }
-
     public void RemoveAllGrabbers()
     {
-        DestoryHashTable<string, TLabSyncGrabbable>(m_grabbables);
+        foreach(DictionaryEntry entry in m_grabbables)
+        {
+            TLabSyncGrabbable grabbable = entry.Value as TLabSyncGrabbable;
+            grabbable.ShutdownGrabber();
+        }
+
+        m_grabbables.Clear();
     }
 
     public void RemoveAllAnimators()
     {
-        DestoryHashTable<string, TLabSyncAnim>(m_animators);
+        //
     }
 
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)

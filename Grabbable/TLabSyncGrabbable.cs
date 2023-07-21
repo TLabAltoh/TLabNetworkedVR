@@ -24,6 +24,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private bool m_isSyncFromOutside = false;
 
+    private bool m_shutdown = false;
+
     // https://www.fenet.jp/dotnet/column/language/4836/
     // A fast approach to string processing
 
@@ -563,24 +565,28 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    private void DestoryGrabber()
+    public void ShutdownGrabber()
     {
+        if (m_shutdown == true) return;
+
         if (SocketIsOpen == false) return;
 
         // このオブジェクトをロックしているのが自分だったら解除する
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
             m_grabbed != -1 &&
             m_grabbed != -2) GrabbLock(false);
+
+        m_enableSync = false;
     }
 
     private void OnDestroy()
     {
-        DestoryGrabber();
+        ShutdownGrabber();
     }
 
     private void OnApplicationQuit()
     {
-        DestoryGrabber();
+        ShutdownGrabber();
     }
 }
 
