@@ -565,13 +565,19 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
+    public void ShutdownGrabber(bool deleteCache)
+    {
+        ShutdownGrabber();
+
+        if (deleteCache)
+        {
+            //
+        }
+    }
+
     public void ShutdownGrabber()
     {
-        if (m_shutdown == true) return;
-
-        if (SocketIsOpen == false) return;
-
-        SetInitialChildTransform();
+        if (m_shutdown == true || SocketIsOpen == false) return;
 
         // このオブジェクトをロックしているのが自分だったら解除する
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
