@@ -476,6 +476,16 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
         m_isSyncFromOutside = false;
     }
+
+    public void ClearTransform()
+    {
+        if (m_enableSync == false) return;
+
+        TLabSyncClient.Instalce.SendWsMessage(
+            role: WebRole.GUEST, action: WebAction.CLEARTRANSFORM,
+            seatIndex: TLabSyncClient.Instalce.SeatIndex,
+            transform: new WebObjectInfo { id = this.gameObject.name });
+    }
     #endregion SyncTransform
 
     #region Divide
@@ -565,18 +575,16 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    public void ShutdownGrabber()
+    public void ShutdownGrabber(bool deleteCache)
     {
-        if (m_shutdown == true) return;
-
-        if (SocketIsOpen == false) return;
-
-        SetInitialChildTransform();
+        if (m_shutdown == true || SocketIsOpen == false) return;
 
         // このオブジェクトをロックしているのが自分だったら解除する
         if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
             m_grabbed != -1 &&
             m_grabbed != -2) GrabbLock(false);
+
+        if (deleteCache == true) ClearTransform();
 
         m_shutdown = true;
         m_enableSync = false;
@@ -584,12 +592,12 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private void OnDestroy()
     {
-        ShutdownGrabber();
+        ShutdownGrabber(false);
     }
 
     private void OnApplicationQuit()
     {
-        ShutdownGrabber();
+        ShutdownGrabber(false);
     }
 }
 

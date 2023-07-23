@@ -86,8 +86,11 @@ public enum WebAction
     DIVIDEGRABBER,
     SYNCTRANSFORM,
     SYNCANIM,
+    CLEARTRANSFORM,
+    CLEARANIM,
     REFLESH,
-    UNIREFLESH,
+    UNIREFLESHTRANSFORM,
+    UNIREFLESHANIM,
     CUSTOMACTION
 }
 
@@ -269,7 +272,7 @@ public class TLabSyncClient : MonoBehaviour
         foreach(DictionaryEntry entry in m_grabbables)
         {
             TLabSyncGrabbable grabbable = entry.Value as TLabSyncGrabbable;
-            grabbable.ShutdownGrabber();
+            grabbable.ShutdownGrabber(false);
         }
 
         m_grabbables.Clear();
@@ -277,7 +280,13 @@ public class TLabSyncClient : MonoBehaviour
 
     public void RemoveAllAnimators()
     {
-        //
+        foreach(DictionaryEntry entry in m_animators)
+        {
+            TLabSyncAnim animator = entry.Value as TLabSyncAnim;
+            animator.ShutdownAnimator(false);
+        }
+
+        m_animators.Clear();
     }
 
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
@@ -326,7 +335,7 @@ public class TLabSyncClient : MonoBehaviour
         TLabSyncJson obj = new TLabSyncJson
         {
             role = (int)WebRole.GUEST,
-            action = (int)WebAction.UNIREFLESH,
+            action = (int)WebAction.UNIREFLESHTRANSFORM,
             transform = new WebObjectInfo
             {
                 id = targetName

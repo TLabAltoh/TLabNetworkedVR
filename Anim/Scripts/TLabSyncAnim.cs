@@ -25,32 +25,32 @@ public class TLabSyncAnim : MonoBehaviour
 
     public void SyncAnim()
     {
-        foreach(TLabAnimParameterInfo parameter in m_parameters)
+        foreach (TLabAnimParameterInfo parameter in m_parameters)
         {
             TLabSyncJson obj = new TLabSyncJson
             {
-                role        = (int)WebRole.GUEST,
-                action      = (int)WebAction.SYNCTRANSFORM,
-                animator    = new WebAnimInfo
+                role = (int)WebRole.GUEST,
+                action = (int)WebAction.SYNCTRANSFORM,
+                animator = new WebAnimInfo
                 {
-                    id          = this.transform.name,
-                    parameter   = parameter.name
+                    id = this.transform.name,
+                    parameter = parameter.name
                 }
             };
 
             switch (parameter.type)
             {
                 case AnimatorControllerParameterType.Int:
-                    obj.animator.type       = (int)WebAnimValueType.typeInt;
-                    obj.animator.intVal     = m_animator.GetInteger(parameter.name);
+                    obj.animator.type = (int)WebAnimValueType.typeInt;
+                    obj.animator.intVal = m_animator.GetInteger(parameter.name);
                     break;
                 case AnimatorControllerParameterType.Float:
-                    obj.animator.type       = (int)WebAnimValueType.typeFloat;
-                    obj.animator.floatVal   = m_animator.GetFloat(parameter.name);
+                    obj.animator.type = (int)WebAnimValueType.typeFloat;
+                    obj.animator.floatVal = m_animator.GetFloat(parameter.name);
                     break;
                 case AnimatorControllerParameterType.Bool:
-                    obj.animator.type       = (int)WebAnimValueType.typeBool;
-                    obj.animator.boolVal    = m_animator.GetBool(parameter.name);
+                    obj.animator.type = (int)WebAnimValueType.typeBool;
+                    obj.animator.boolVal = m_animator.GetBool(parameter.name);
                     break;
             }
 
@@ -76,6 +76,24 @@ public class TLabSyncAnim : MonoBehaviour
                 SetTrigger(webAnimator.parameter);
                 break;
         }
+    }
+
+    public void ClearAnim()
+    {
+        TLabSyncJson obj = new TLabSyncJson
+        {
+            role = (int)WebRole.GUEST,
+            action = (int)WebAction.CLEARANIM,
+            animator = new WebAnimInfo { id = this.transform.name }
+        };
+
+        string json = JsonUtility.ToJson(obj);
+        TLabSyncClient.Instalce.SendWsMessage(json);
+    }
+
+    public void ShutdownAnimator(bool deleteCache)
+    {
+        if (deleteCache == true) ClearAnim();
     }
 
     #region SetParameter
@@ -106,8 +124,8 @@ public class TLabSyncAnim : MonoBehaviour
         int parameterLength = m_animator.parameters.Length;
         for (int i = 0; i < parameterLength; i++)
         {
-            TLabAnimParameterInfo parameterInfo     = new TLabAnimParameterInfo();
-            AnimatorControllerParameter parameter   = m_animator.GetParameter(i);
+            TLabAnimParameterInfo parameterInfo = new TLabAnimParameterInfo();
+            AnimatorControllerParameter parameter = m_animator.GetParameter(i);
             parameterInfo.type = parameter.type;
             parameterInfo.name = parameter.name;
 
