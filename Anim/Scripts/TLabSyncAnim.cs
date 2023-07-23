@@ -78,6 +78,11 @@ public class TLabSyncAnim : MonoBehaviour
         }
     }
 
+    public void ClearAnim()
+    {
+        //
+    }
+
     #region SetParameter
     public void SetInteger(string paramName, int value)
     {
