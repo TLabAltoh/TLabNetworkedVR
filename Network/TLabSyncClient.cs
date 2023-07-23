@@ -87,7 +87,7 @@ public enum WebAction
     SYNCTRANSFORM,
     SYNCANIM,
     CLEARTRANSFORM,
-    CELARANIM,
+    CLEARANIM,
     REFLESH,
     UNIREFLESHTRANSFORM,
     UNIREFLESHANIM,
@@ -280,7 +280,13 @@ public class TLabSyncClient : MonoBehaviour
 
     public void RemoveAllAnimators()
     {
-        //
+        foreach(DictionaryEntry entry in m_animators)
+        {
+            TLabSyncAnim animator = entry.Value as TLabSyncAnim;
+            animator.ShutdownAnimator(false);
+        }
+
+        m_animators.Clear();
     }
 
     public void AddSyncGrabbable(string name, TLabSyncGrabbable grabbable)
