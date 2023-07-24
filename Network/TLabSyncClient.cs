@@ -77,6 +77,8 @@ public enum WebAction
     REGIST,
     REGECT,
     ACEPT,
+    EXIT,
+    REENTER,
     GUESTDISCONNECT,
     GUESTPARTICIPATION,
     ALLOCATEGRAVITY,
@@ -174,9 +176,6 @@ public class TLabSyncClient : MonoBehaviour
     [Tooltip("このシーンはホストか")]
     [SerializeField] private bool m_isHost = false;
 
-    [Tooltip("実行時，このシーンのワールドデータをサーバに登録するか")]
-    [SerializeField] private bool m_regist = false;
-
     [Tooltip("自分自身のアバターモデル(同期の有効化のため登録する必要あり)")]
     [Header("Own Avator")]
     [SerializeField] private GameObject m_cameraRig;
@@ -206,9 +205,12 @@ public class TLabSyncClient : MonoBehaviour
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
     private WebSocket websocket;
+    private bool m_conencted = false;
+    private bool m_acepted = false;
+
+    private const int SEAT_LENGTH = 5;
     private int m_seatIndex = -1;
     private bool[] m_guestTable = new bool[SEAT_LENGTH];
-    private const int SEAT_LENGTH = 5;
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -253,6 +255,14 @@ public class TLabSyncClient : MonoBehaviour
         get
         {
             return websocket == null ? false : websocket.State == WebSocketState.Open;
+        }
+    }
+
+    public bool SocketIsConnecting
+    {
+        get
+        {
+            return websocket == null ? false : websocket.State == WebSocketState.Connecting;
         }
     }
 
@@ -350,6 +360,18 @@ public class TLabSyncClient : MonoBehaviour
 
     #region ConnectServer
 
+    public void Exit()
+    {
+        string json =
+            "{" +
+                TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
+                TLabSyncClientConst.ACTION + ((int)WebAction.EXIT).ToString() + TLabSyncClientConst.COMMA +
+                TLabSyncClientConst.SEATINDEX + (m_seatIndex.ToString()) +
+            "}";
+
+        SendWsMessage(json);
+    }
+
     private async IAsyncEnumerator<int> ConnectServerTask()
     {
         yield return -1;
@@ -358,21 +380,27 @@ public class TLabSyncClient : MonoBehaviour
 
         websocket.OnOpen += () =>
         {
-            if (m_regist == true)
-            {
-                TLabSyncGrabbable[] grabbables = FindObjectsOfType<TLabSyncGrabbable>();
-                foreach (TLabSyncGrabbable grabbable in grabbables)
-                {
-                    GameObject go = grabbable.gameObject;
-                    if (go != m_leftHand && go != m_rightHand && go != m_cameraRig) grabbable.SyncTransform();
-                }
-            }
+            m_conencted = true;
 
-            string json =
+            string json;
+
+            if (m_acepted == true)
+            {
+                json =
+                "{" +
+                    TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
+                    TLabSyncClientConst.ACTION + ((int)WebAction.REENTER).ToString() + TLabSyncClientConst.COMMA +
+                    TLabSyncClientConst.SEATINDEX + (m_seatIndex.ToString()) +
+                "}";
+            }
+            else
+            {
+                json =
                 "{" +
                     TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
                     TLabSyncClientConst.ACTION + ((int)WebAction.REGIST).ToString() +
                 "}";
+            }
 
             Debug.Log(thisName + json);
 
@@ -406,6 +434,8 @@ public class TLabSyncClient : MonoBehaviour
                 if (obj.action == (int)WebAction.ACEPT)
                 {
                     #region
+                    m_acepted = true;
+
                     m_seatIndex = obj.seatIndex;
 
                     m_guestTable[obj.seatIndex] = true;
@@ -461,6 +491,8 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.GUESTDISCONNECT)
                 {
                     #region
+                    if (m_guestTable[obj.seatIndex] == false) return;
+
                     string guestName = prefabName + obj.seatIndex.ToString();
 
                     GameObject guestRTouch = GameObject.Find(guestName + ".RTouch");
@@ -497,6 +529,9 @@ public class TLabSyncClient : MonoBehaviour
                 else if (obj.action == (int)WebAction.GUESTPARTICIPATION)
                 {
                     #region
+
+                    if (m_guestTable[obj.seatIndex] == true) return;
+
                     Vector3 respownPos = new Vector3(0.0f, -0.5f, 0.0f);
                     Quaternion respownRot = Quaternion.identity;
 
@@ -623,6 +658,14 @@ public class TLabSyncClient : MonoBehaviour
 
     private IEnumerator ConnectServerTaskStart()
     {
+        yield return null;
+
+        if (websocket != null)
+        {
+            websocket.Close();
+            websocket = null;
+        }
+
         yield return null;
 
         IAsyncEnumerator<int> task = ConnectServerTask();
@@ -772,6 +815,12 @@ public class TLabSyncClient : MonoBehaviour
     public void CloseRTC()
     {
         dataChannel.Exit();
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        // Reconnect server and enter room.
+        if(pause == false && SocketIsOpen && !SocketIsConnecting) ConnectServerAsync();
     }
 
     void Awake()
