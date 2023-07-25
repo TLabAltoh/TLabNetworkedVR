@@ -820,7 +820,9 @@ public class TLabSyncClient : MonoBehaviour
     private void OnApplicationPause(bool pause)
     {
         // Reconnect server and enter room.
-        if(pause == false && SocketIsOpen && !SocketIsConnecting) ConnectServerAsync();
+        if(pause == false && !SocketIsOpen && !SocketIsConnecting) ConnectServerAsync();
+
+        Debug.Log(thisName + " on pause: " + pause.ToString());
     }
 
     void Awake()
