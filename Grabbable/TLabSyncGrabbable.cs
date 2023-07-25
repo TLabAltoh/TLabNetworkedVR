@@ -532,13 +532,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     }
     #endregion Divide
 
-#if UNITY_EDITOR
-    protected override void TestFunc()
-    {
-        Debug.Log(thisName + "After Override");
-    }
-#endif
-
     protected override void Start()
     {
         base.Start();
