@@ -78,7 +78,6 @@ public enum WebAction
     REGECT,
     ACEPT,
     EXIT,
-    REENTER,
     GUESTDISCONNECT,
     GUESTPARTICIPATION,
     ALLOCATEGRAVITY,
@@ -147,17 +146,20 @@ public class TLabSyncClientCustomCallback
 {
     public void OnMessage(string message)
     {
-        if (onMessage != null) onMessage.Invoke(message);
+        if (onMessage != null)
+            onMessage.Invoke(message);
     }
 
     public void OnGuestParticipated(int seatIndex)
     {
-        if (onGuestParticipated != null) onGuestParticipated.Invoke(seatIndex);
+        if (onGuestParticipated != null)
+            onGuestParticipated.Invoke(seatIndex);
     }
 
     public void OnGuestDisconnected(int seatIndex)
     {
-        if (onGuestDisconnected != null) onGuestDisconnected.Invoke(seatIndex);
+        if (onGuestDisconnected != null)
+            onGuestDisconnected.Invoke(seatIndex);
     }
 
     [SerializeField] private UnityEvent<string> onMessage;
@@ -169,48 +171,47 @@ public class TLabSyncClientCustomCallback
 public class TLabSyncClient : MonoBehaviour
 {
     [Header("Server Info")]
-
-    [Tooltip("サーバーのアドレス，ポート番号は5000を使用")]
+    [Tooltip("Server Address (port 5000)")]
     [SerializeField] private string m_serverAddr = "ws://192.168.11.10:5000";
 
-    [Tooltip("このシーンはホストか")]
-    [SerializeField] private bool m_isHost = false;
-
-    [Tooltip("自分自身のアバターモデル(同期の有効化のため登録する必要あり)")]
+    [Tooltip("Your own avatar model (must be registered to enable synchronization)")]
     [Header("Own Avator")]
     [SerializeField] private GameObject m_cameraRig;
     [SerializeField] private GameObject m_rightHand;
     [SerializeField] private GameObject m_leftHand;
     [SerializeField] private Transform m_rootTransform;
 
-    [Tooltip("自分から見える相手のアバターモデル")]
+    [Tooltip("The avatar model of the other party as seen from you")]
     [Header("Guest Avator")]
     [SerializeField] private GameObject m_guestHead;
     [SerializeField] private GameObject m_guestRTouch;
     [SerializeField] private GameObject m_guestLTouch;
 
-    [Tooltip("各プレイヤーのリスポン位置")]
+    [Tooltip("Responce position of each player")]
     [Header("Respown Anchor")]
     [SerializeField] private Transform m_hostAnchor;
     [SerializeField] private Transform[] m_guestAnchors;
 
-    [Tooltip("WebRTCDataChannel")]
+    [Tooltip("WebRTCDatachannel for synchronizing Transforms between players")]
     [Header("WebRTCDataChannel")]
     [SerializeField] private TLabWebRTCDataChannel dataChannel;
 
-    [Tooltip("カスタムメッセージのコールバック")]
+    [Tooltip("Custom message callbacks")]
     [Header("Custom Event")]
     [SerializeField] private TLabSyncClientCustomCallback[] m_customCallbacks;
+
+    [Tooltip("Whether the user is Host")]
+    [Header("User role")]
+    [SerializeField] private bool m_isHost = false;
 
     [System.NonSerialized] public static TLabSyncClient Instalce;
 
     private WebSocket websocket;
-    private bool m_conencted = false;
-    private bool m_acepted = false;
 
     private const int SEAT_LENGTH = 5;
     private int m_seatIndex = -1;
     private bool[] m_guestTable = new bool[SEAT_LENGTH];
+
 
     private Hashtable m_grabbables = new Hashtable();
     private Hashtable m_animators = new Hashtable();
@@ -263,6 +264,19 @@ public class TLabSyncClient : MonoBehaviour
         get
         {
             return websocket == null ? false : websocket.State == WebSocketState.Connecting;
+        }
+    }
+
+    public bool IsHost
+    {
+        get
+        {
+            return m_isHost;
+        }
+
+        set
+        {
+            m_isHost = value;
         }
     }
 
@@ -321,11 +335,6 @@ public class TLabSyncClient : MonoBehaviour
     #endregion SyncTargetUtility
 
     #region Reflesh
-    /// <summary>
-    /// - Grabberのrigidbodyの再割り当て
-    /// - 現在のサーバー上に記録されているTransformを要求
-    /// </summary>
-    /// <param name="reloadWorldData">サーバー上のTransformを要求するか</param>
     public void ForceReflesh(bool reloadWorldData)
     {
         TLabSyncJson obj = new TLabSyncJson
@@ -359,7 +368,6 @@ public class TLabSyncClient : MonoBehaviour
     #endregion Reflesh
 
     #region ConnectServer
-
     public void Exit()
     {
         string json =
@@ -380,27 +388,11 @@ public class TLabSyncClient : MonoBehaviour
 
         websocket.OnOpen += () =>
         {
-            m_conencted = true;
-
-            string json;
-
-            if (m_acepted == true)
-            {
-                json =
-                "{" +
-                    TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
-                    TLabSyncClientConst.ACTION + ((int)WebAction.REENTER).ToString() + TLabSyncClientConst.COMMA +
-                    TLabSyncClientConst.SEATINDEX + (m_seatIndex.ToString()) +
-                "}";
-            }
-            else
-            {
-                json =
+            string json =
                 "{" +
                     TLabSyncClientConst.ROLE + (m_isHost ? ((int)WebRole.HOST).ToString() : ((int)WebRole.GUEST).ToString()) + TLabSyncClientConst.COMMA +
                     TLabSyncClientConst.ACTION + ((int)WebAction.REGIST).ToString() +
                 "}";
-            }
 
             Debug.Log(thisName + json);
 
@@ -434,8 +426,6 @@ public class TLabSyncClient : MonoBehaviour
                 if (obj.action == (int)WebAction.ACEPT)
                 {
                     #region
-                    m_acepted = true;
-
                     m_seatIndex = obj.seatIndex;
 
                     m_guestTable[obj.seatIndex] = true;
@@ -682,7 +672,6 @@ public class TLabSyncClient : MonoBehaviour
     {
         StartCoroutine(ConnectServerTaskStart());
     }
-
     #endregion ConnectServer
 
     void Start()
@@ -722,11 +711,6 @@ public class TLabSyncClient : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// WebRTC
-    /// </summary>
-    /// <param name="src"></param>
-    /// <param name="bytes"></param>
     public void OnRTCMessage(string dst, string src, byte[] bytes)
     {
         int offset = bytes[0];
@@ -785,9 +769,14 @@ public class TLabSyncClient : MonoBehaviour
 
     #region SendWebsocketMessage
     public void SendWsMessage(
-        WebRole role, WebAction action, int seatIndex = -1, bool active = false,
-        WebObjectInfo transform = null, WebAnimInfo animator = null,
-        int customIndex = -1, string custom = "")
+        WebRole role,
+        WebAction action,
+        int seatIndex = -1,
+        bool active = false,
+        WebObjectInfo transform = null,
+        WebAnimInfo animator = null,
+        int customIndex = -1,
+        string custom = "")
     {
         TLabSyncJson obj = new TLabSyncJson
         {
@@ -815,14 +804,6 @@ public class TLabSyncClient : MonoBehaviour
     public void CloseRTC()
     {
         dataChannel.Exit();
-    }
-
-    private void OnApplicationPause(bool pause)
-    {
-        // Reconnect server and enter room.
-        if(pause == false && !SocketIsOpen && !SocketIsConnecting) ConnectServerAsync();
-
-        Debug.Log(thisName + " on pause: " + pause.ToString());
     }
 
     void Awake()

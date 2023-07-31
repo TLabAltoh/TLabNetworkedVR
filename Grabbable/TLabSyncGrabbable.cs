@@ -42,6 +42,14 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
+    private bool CanAutoSync
+    {
+        get
+        {
+            return m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync);
+        }
+    }
+
     public bool IsEnableGravity
     {
         get
@@ -86,7 +94,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         get
         {
-            return TLabSyncClient.Instalce != null && TLabSyncClient.Instalce.SocketIsOpen == true && TLabSyncClient.Instalce.SeatIndex != -1;
+            return (TLabSyncClient.Instalce != null &&
+                    TLabSyncClient.Instalce.SocketIsOpen == true &&
+                    TLabSyncClient.Instalce.SeatIndex != -1);
         }
     }
 
@@ -114,14 +124,15 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     private IEnumerator RegistRbObj()
     {
-        // useGravity -> falseの場合，サーバーに登録しない
+        // if useGravity is false, doesn't regist this object to server
         if (m_useGravity == false) yield break;
 
-        // Syncサーバーとの接続が確立するまで待機
+        // Wait for connection is opened
         while (SocketIsOpen == false) yield return null;
 
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.REGISTRBOBJ,
+            role: WebRole.GUEST,
+            action: WebAction.REGISTRBOBJ,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
         Debug.Log(thisName + "Send Rb Obj");
@@ -131,9 +142,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         m_rbAllocated = active;
 
-        // 自分がこのオブジェクトのrigidbodyの担当
-        // 誰も掴んでいない
-        // ------> 重力計算を有効化
         SetGravity((m_grabbed == -1 && active) ? true : false);
 
         bool allocated = m_grabbed == -1 && active;
@@ -169,7 +177,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         ForceReleaseSelf();
 
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.FORCERELEASE,
+            role: WebRole.GUEST,
+            action: WebAction.FORCERELEASE,
             transform : new WebObjectInfo { id = this.gameObject.name });
 
         Debug.Log(thisName + "force release");
@@ -187,23 +196,27 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
             m_grabbed = index;
 
-            if (m_rbAllocated == true) SetGravity(false);
+            if (m_rbAllocated == true)
+                SetGravity(false);
         }
         else
         {
             m_grabbed = -1;
-            if (m_rbAllocated == true) SetGravity(true);
+            if (m_rbAllocated == true)
+                SetGravity(true);
         }
     }
 
     public void GrabbLock(bool active)
     {
-        if (m_rbAllocated == true) SetGravity(!active);
+        if (m_rbAllocated == true)
+            SetGravity(!active);
 
         SyncTransform();
 
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.GRABBLOCK,
+            role: WebRole.GUEST,
+            action: WebAction.GRABBLOCK,
             seatIndex: active ? TLabSyncClient.Instalce.SeatIndex : -1,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
@@ -226,7 +239,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (m_rbAllocated) SetGravity(!active);
 
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.GRABBLOCK,
+            role: WebRole.GUEST,
+            action: WebAction.GRABBLOCK,
             seatIndex: active ? -2 : -1,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
@@ -235,16 +249,13 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     protected override void RbGripSwitch(bool grip)
     {
-        // 自分自身がGravityの計算を担当している
         GrabbLock(grip);
     }
 
     public override bool AddParent(GameObject parent)
     {
-        // 掴むことが有効化されている
-        // 誰も掴んでいない
-
-        if (m_locked == true || m_grabbed != -1) return false;
+        if (m_locked == true || m_grabbed != -1)
+            return false;
 
         return base.AddParent(parent);
     }
@@ -281,9 +292,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         }
     }
 
-    /// <summary>
-    /// WebRTC
-    /// </summary>
     public void SyncRTCTransform()
     {
         if (m_enableSync == false) return;
@@ -345,9 +353,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         m_isSyncFromOutside = false;
     }
 
-    /// <summary>
-    /// WebSocket
-    /// </summary>
     public void SyncTransform()
     {
         if (m_enableSync == false) return;
@@ -482,7 +487,8 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         if (m_enableSync == false) return;
 
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.CLEARTRANSFORM,
+            role: WebRole.GUEST,
+            action: WebAction.CLEARTRANSFORM,
             seatIndex: TLabSyncClient.Instalce.SeatIndex,
             transform: new WebObjectInfo { id = this.gameObject.name });
     }
@@ -501,7 +507,6 @@ public class TLabSyncGrabbable : TLabVRGrabbable
 
     public override int Devide()
     {
-        // 分割/結合処理
         int result = base.Devide();
 
         if (result < 0) return -1;
@@ -512,9 +517,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.ForceRelease();
 
-        // オブジェクトの分割を通知
         TLabSyncClient.Instalce.SendWsMessage(
-            role: WebRole.GUEST, action: WebAction.DIVIDEGRABBER,
+            role: WebRole.GUEST,
+            action: WebAction.DIVIDEGRABBER,
             active: active,
             transform: new WebObjectInfo { id = this.gameObject.name });
 
@@ -525,24 +530,40 @@ public class TLabSyncGrabbable : TLabVRGrabbable
     {
         base.SetInitialChildTransform();
 
-        if (m_enableDivide == false) return;
+        if (m_enableDivide == false)
+            return;
 
         TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
         foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
     }
     #endregion Divide
 
+    public void ShutdownGrabber(bool deleteCache)
+    {
+        if (m_shutdown == true || SocketIsOpen == false)
+            return;
+
+        // このオブジェクトをロックしているのが自分だったら解除する
+        if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
+            m_grabbed != -1 &&
+            m_grabbed != -2) GrabbLock(false);
+
+        if (deleteCache == true)
+            ClearTransform();
+
+        m_shutdown = true;
+        m_enableSync = false;
+    }
+
     protected override void Start()
     {
         base.Start();
 
-        // サーバーからRigidbody割り当てされるまで無効化する
+        // Disable gravity untile graivity allocated from sync server
         SetGravity(false);
 
-        // useGravity -> trueの場合，Syncサーバーにオブジェクトを登録
         StartCoroutine(RegistRbObj());
 
-        // Syncクライアントに自分を登録
         TLabSyncClient.Instalce.AddSyncGrabbable(this.gameObject.name, this);
     }
 
@@ -564,23 +585,9 @@ public class TLabSyncGrabbable : TLabVRGrabbable
         {
             m_scaleInitialDistance = -1.0f;
 
-            if (m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync)) SyncRTCTransform();
+            if (CanAutoSync == true)
+                SyncRTCTransform();
         }
-    }
-
-    public void ShutdownGrabber(bool deleteCache)
-    {
-        if (m_shutdown == true || SocketIsOpen == false) return;
-
-        // このオブジェクトをロックしているのが自分だったら解除する
-        if (TLabSyncClient.Instalce.SeatIndex == m_grabbed &&
-            m_grabbed != -1 &&
-            m_grabbed != -2) GrabbLock(false);
-
-        if (deleteCache == true) ClearTransform();
-
-        m_shutdown = true;
-        m_enableSync = false;
     }
 
     private void OnDestroy()
@@ -609,7 +616,7 @@ public class TLabSyncGrabbableEditor : Editor
 
     private void InitializeForDivibable(TLabSyncGrabbable grabbable, bool isRoot)
     {
-        // RigidbodyのUseGravityを無効化する
+        // Disable Rigidbody.useGrabity
         grabbable.m_enableSync = true;
         grabbable.m_autoSync = false;
         grabbable.m_locked = false;

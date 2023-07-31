@@ -45,20 +45,24 @@ public class TLabRTCSigJson
 
 public class TLabWebRTCDataChannel : MonoBehaviour
 {
-    private Dictionary<string, RTCPeerConnection> peerConnectionDic = new Dictionary<string, RTCPeerConnection>();
-    private Dictionary<string, RTCDataChannel> dataChannelDic = new Dictionary<string, RTCDataChannel>();
-    private Dictionary<string, bool> dataChannelFlagDic = new Dictionary<string, bool>();
-    private Dictionary<string, List<RTCIceCandidate>> candidateDic = new Dictionary<string, List<RTCIceCandidate>>();
-
-    private WebSocket m_websocket;
-
-    private const string thisName = "[tlabwebrtc] ";
-
+    [Header("Signaling Server Address")]
     [SerializeField] private string serverAddr = "ws://localhost:3001";
 
     [Header("Connection State")]
     [SerializeField] private string userID;
     [SerializeField] private string roomID;
+
+    [Header("On Message Callback")]
+    [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
+
+    // session dictionary
+    private Dictionary<string, RTCPeerConnection> peerConnectionDic = new Dictionary<string, RTCPeerConnection>();
+    private Dictionary<string, RTCDataChannel> dataChannelDic = new Dictionary<string, RTCDataChannel>();
+    private Dictionary<string, bool> dataChannelFlagDic = new Dictionary<string, bool>();
+    private Dictionary<string, List<RTCIceCandidate>> candidateDic = new Dictionary<string, List<RTCIceCandidate>>();
+
+    // websocket instance
+    private WebSocket m_websocket;
 
     // datachannle option
     private bool? orderd;
@@ -68,7 +72,8 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     private bool? negotiated;
     private int? id;
 
-    [SerializeField] private UnityEvent<string, string, byte[]> onMessage;
+    // this class name
+    private const string thisName = "[tlabwebrtc] ";
 
     public void SetSignalingServerAddr(string addr)
     {
@@ -168,7 +173,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     #endregion SessionDescription
 
     #region Signaling
-    private void CreatePeerConnectionTask(string dst, bool call)
+    private void CreatePeerConnection(string dst, bool call)
     {
         Debug.Log(thisName + "create new peerConnection start");
 
@@ -218,11 +223,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         }
     }
 
-    private void CreatePeerConnection(string dst, bool call)
-    {
-        CreatePeerConnectionTask(dst, call);
-    }
-
     private RTCConfiguration GetSelectedSdpSemantics()
     {
         RTCConfiguration config = default;
@@ -241,23 +241,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         tlabDesc.sdp = desc.sdp;
 
         return tlabDesc;
-    }
-
-    private IEnumerator OnAnswer(string src, RTCSessionDescription desc)
-    {
-        Debug.Log(thisName + "peerConnection.setRemoteDescription start");
-
-        var op2 = peerConnectionDic[src].SetRemoteDescription(ref desc);
-        yield return op2;
-        if (!op2.IsError)
-            OnSetRemoteSuccess(peerConnectionDic[src]);
-        else
-        {
-            var error = op2.Error;
-            OnSetSessionDescriptionError(ref error);
-        }
-
-        yield break;
     }
 
     private IEnumerator OnCreateAnswerSuccess(string dst, RTCSessionDescription desc)
@@ -280,6 +263,44 @@ public class TLabWebRTCDataChannel : MonoBehaviour
         Debug.Log(thisName + "peerConnection send local description start");
 
         SendWsMeg(TLabRTCSigAction.ANSWER, GetTLabRTCDesc(desc), null, dst);
+    }
+
+    private IEnumerator OnCreateOfferSuccess(string dst, RTCSessionDescription desc)
+    {
+        Debug.Log(thisName + $"Offer from pc\n{desc.sdp}");
+
+        Debug.Log(thisName + "pc setLocalDescription start");
+        var op = peerConnectionDic[dst].SetLocalDescription(ref desc);
+        yield return op;
+
+        if (!op.IsError)
+            OnSetLocalSuccess(peerConnectionDic[dst]);
+        else
+        {
+            var error = op.Error;
+            OnSetSessionDescriptionError(ref error);
+        }
+
+        Debug.Log(thisName + "pc send local description start");
+
+        SendWsMeg(TLabRTCSigAction.OFFER, GetTLabRTCDesc(desc), null, dst);
+    }
+
+    private IEnumerator OnAnswer(string src, RTCSessionDescription desc)
+    {
+        Debug.Log(thisName + "peerConnection.setRemoteDescription start");
+
+        var op2 = peerConnectionDic[src].SetRemoteDescription(ref desc);
+        yield return op2;
+        if (!op2.IsError)
+            OnSetRemoteSuccess(peerConnectionDic[src]);
+        else
+        {
+            var error = op2.Error;
+            OnSetSessionDescriptionError(ref error);
+        }
+
+        yield break;
     }
 
     private IEnumerator OnOffer(string src, RTCSessionDescription desc)
@@ -310,27 +331,6 @@ public class TLabWebRTCDataChannel : MonoBehaviour
             OnCreateSessionDescriptionError(op3.Error);
 
         yield break;
-    }
-
-    private IEnumerator OnCreateOfferSuccess(string dst, RTCSessionDescription desc)
-    {
-        Debug.Log(thisName + $"Offer from pc\n{desc.sdp}");
-
-        Debug.Log(thisName + "pc setLocalDescription start");
-        var op = peerConnectionDic[dst].SetLocalDescription(ref desc);
-        yield return op;
-
-        if (!op.IsError)
-            OnSetLocalSuccess(peerConnectionDic[dst]);
-        else
-        {
-            var error = op.Error;
-            OnSetSessionDescriptionError(ref error);
-        }
-
-        Debug.Log(thisName + "pc send local description start");
-
-        SendWsMeg(TLabRTCSigAction.OFFER, GetTLabRTCDesc(desc), null, dst);
     }
 
     private IEnumerator Call(string dst)
@@ -364,9 +364,14 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     }
 
     public void Join(
-        string userID, string roomID,
-        string protocol = null, bool? orderd = null, bool? negotiated = null,
-        int? maxPacketLifeTime = null, int? maxRetransmits = null, int? id = null)
+        string userID,
+        string roomID,
+        string protocol = null,
+        bool? orderd = null,
+        bool? negotiated = null,
+        int? maxPacketLifeTime = null,
+        int? maxRetransmits = null,
+        int? id = null)
     {
         // user info for signaling server
         this.userID = userID;
@@ -479,7 +484,9 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
     public async void SendWsMeg(
         TLabRTCSigAction action,
-        TLabRTCDesc desc, TLabRTCICE ice, string dst)
+        TLabRTCDesc desc,
+        TLabRTCICE ice,
+        string dst)
     {
         if (m_websocket != null && m_websocket.State == WebSocketState.Open)
         {
@@ -524,7 +531,7 @@ public class TLabWebRTCDataChannel : MonoBehaviour
     }
     #endregion Utility
 
-    private async void Start()
+    public async void ConnectToSignalintServer()
     {
         Debug.Log(thisName + "create call back start");
         Debug.Log(thisName + "connect to signaling server start");
@@ -557,6 +564,11 @@ public class TLabWebRTCDataChannel : MonoBehaviour
 
         // waiting for messages
         await m_websocket.Connect();
+    }
+
+    private void Start()
+    {
+        ConnectToSignalintServer();
     }
 
     void Update()
