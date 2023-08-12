@@ -1,11 +1,12 @@
 # TLabVRGrabber
 Assets that support object manipulation for VR in Unity  
-Hand tracking support
+- Supports both hand tracking and controllers  
+- Rigidbody Synchronization
 
 ## Screenshot
 [Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Kensyu)  
-<img src="https://user-images.githubusercontent.com/121733943/235363804-01b50f49-674e-40d4-a11e-39ed3ced5600.gif" width="512" height="512">  
-<img src="https://github.com/TLabAltoh/VR_Kensyu/assets/121733943/73a9d223-436b-489b-9d47-78a38f38c70f" width="512" height="512">
+<img src="Media/tlab-grabbable-controller.gif" width="256">  
+<img src="Media/tlab-grabbable-handtracking.gif" width="256">
 
 ## Getting Started
 ### Prerequisites
