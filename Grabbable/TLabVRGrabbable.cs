@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -87,6 +88,16 @@ namespace TLab.XR.VRGrabber
         protected Quaternion m_thisQuaternionStart;
 
         protected Rigidbody m_rb;
+        protected bool m_gravityState = false;
+        // Windows 12's Core i 9: 400 -----> Size: 20
+        // Oculsu Quest 2: 72 -----> Size: 20 * 72 / 400 = 3.6 ~= 4
+#if UNITY_EDITOR
+        protected FixedQueue<Vector3> m_prebVels = new FixedQueue<Vector3>(20);
+        protected FixedQueue<Vector3> m_prebArgs = new FixedQueue<Vector3>(20);
+#else
+        protected FixedQueue<Vector3> m_prebVels = new FixedQueue<Vector3>(5);
+        protected FixedQueue<Vector3> m_prebArgs = new FixedQueue<Vector3>(5);
+#endif
 
         protected float m_scaleInitialDistance = -1.0f;
         protected float m_scalingFactorInvert;
@@ -137,14 +148,38 @@ namespace TLab.XR.VRGrabber
         }
 #endif
 
+        private Vector3 GetMaxVector(FixedQueue<Vector3> target)
+        {
+            Vector3 maxVec = Vector3.zero;
+            float maxVecMag = 0.0f;
+            foreach (Vector3 vec in target)
+            {
+                float vecMag = vec.magnitude;
+                if (vecMag > maxVecMag)
+                {
+                    maxVecMag = vecMag;
+                    maxVec = vec;
+                }
+            }
+
+            return maxVec;
+        }
+
         public virtual void SetGravity(bool active)
         {
             if (m_rb == null || m_useRigidbody == false || m_useGravity == false) return;
+
+            if (m_gravityState == active) return;
+
+            m_gravityState = active;
 
             if (active == true)
             {
                 m_rb.isKinematic = false;
                 m_rb.useGravity = true;
+
+                m_rb.velocity = GetMaxVector(m_prebVels);
+                m_rb.angularVelocity = GetMaxVector(m_prebArgs);
             }
             else
             {
@@ -216,7 +251,6 @@ namespace TLab.XR.VRGrabber
                 else
                 {
                     RbGripSwitch(false);
-                    SetGravity(true);
 
                     m_mainParent = null;
 
@@ -387,6 +421,15 @@ namespace TLab.XR.VRGrabber
             if (meshCollider.enabled == true) CreateCombineMeshCollider();
         }
 
+        protected virtual void CashRbVelocity()
+        {
+            if (m_rb != null)
+            {
+                m_prebVels.Enqueue(m_rb.velocity);
+                m_prebArgs.Enqueue(m_rb.angularVelocity);
+            }
+        }
+
         protected virtual void Start()
         {
             if (m_enableDivide == true)
@@ -398,6 +441,8 @@ namespace TLab.XR.VRGrabber
             if (m_useRigidbody == true)
             {
                 m_rb = this.gameObject.RequireComponent<Rigidbody>();
+                m_prebVels.Enqueue(m_rb.velocity);
+                m_prebArgs.Enqueue(m_rb.angularVelocity);
 
                 if (m_useGravity == false)
                 {
@@ -419,6 +464,8 @@ namespace TLab.XR.VRGrabber
 
         protected virtual void Update()
         {
+            CashRbVelocity();
+
             if (m_mainParent != null)
             {
                 if (m_subParent != null && m_scaling)
@@ -493,4 +540,39 @@ namespace TLab.XR.VRGrabber
         }
     }
 #endif
+
+    /*
+     * Fixed Count Queue
+     * https://www.hanachiru-blog.com/entry/2020/05/05/120000
+     * */
+
+    public class FixedQueue<T> : IEnumerable<T>
+    {
+        private Queue<T> _queue;
+
+        public int Count => _queue.Count;
+
+        public int Capacity { get; private set; }
+
+        public FixedQueue(int capacity)
+        {
+            Capacity = capacity;
+            _queue = new Queue<T>(capacity);
+        }
+
+        public void Enqueue(T item)
+        {
+            _queue.Enqueue(item);
+
+            if (Count > Capacity) Dequeue();
+        }
+
+        public T Dequeue() => _queue.Dequeue();
+
+        public T Peek() => _queue.Peek();
+
+        public IEnumerator<T> GetEnumerator() => _queue.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => _queue.GetEnumerator();
+    }
 }

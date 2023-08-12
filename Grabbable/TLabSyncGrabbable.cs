@@ -25,6 +25,7 @@ namespace TLab.XR.VRGrabber
         private int m_grabbed = -1;
 
         private bool m_isSyncFromOutside = false;
+        private int m_didnotReachCount = 0;
 
         private bool m_shutdown = false;
 
@@ -35,22 +36,6 @@ namespace TLab.XR.VRGrabber
 
         //
         private const string thisName = "[tlabsyncgrabbable] ";
-
-        private bool CanRbSync
-        {
-            get
-            {
-                return (m_rb == null) ? false : m_rb.useGravity;
-            }
-        }
-
-        private bool CanAutoSync
-        {
-            get
-            {
-                return m_enableSync && (m_autoSync || m_rbAllocated && CanRbSync);
-            }
-        }
 
         public bool IsEnableGravity
         {
@@ -76,11 +61,27 @@ namespace TLab.XR.VRGrabber
             }
         }
 
+        public bool IsGrabbLocked
+        {
+            get
+            {
+                return m_grabbed != -1;
+            }
+        }
+
         public bool RbAllocated
         {
             get
             {
                 return m_rbAllocated;
+            }
+        }
+
+        private bool EnableAutoSync
+        {
+            get
+            {
+                return m_enableSync && !IsGrabbLocked && (m_autoSync || m_rbAllocated && IsEnableGravity);
             }
         }
 
@@ -112,6 +113,9 @@ namespace TLab.XR.VRGrabber
 
             if (m_useRigidbody == true)
             {
+                // Rigidbodyの速度を正しく計算するために，Gravityが無効化されていることを確認する．
+                SetGravity(false);
+
                 m_rb.MovePosition(new Vector3(position.x, position.y, position.z));
                 m_rb.MoveRotation(new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w));
             }
@@ -122,6 +126,7 @@ namespace TLab.XR.VRGrabber
             }
 
             m_isSyncFromOutside = true;
+            m_didnotReachCount = 0;
         }
 
         private IEnumerator RegistRbObj()
@@ -211,6 +216,8 @@ namespace TLab.XR.VRGrabber
 
         public void GrabbLock(bool active)
         {
+            m_grabbed = active ? TLabSyncClient.Instalce.SeatIndex : -1;
+
             if (m_rbAllocated == true)
                 SetGravity(!active);
 
@@ -238,6 +245,8 @@ namespace TLab.XR.VRGrabber
             // parse.seatIndex	: player index that is grabbing the object
             // seatIndex		: index of the socket actually communicating
 
+            m_grabbed = active ? -2 : -1;
+
             if (m_rbAllocated) SetGravity(!active);
 
             TLabSyncClient.Instalce.SendWsMessage(
@@ -256,7 +265,7 @@ namespace TLab.XR.VRGrabber
 
         public override bool AddParent(GameObject parent)
         {
-            if (m_locked == true || m_grabbed != -1)
+            if (m_locked == true || m_grabbed != -1 && m_grabbed != TLabSyncClient.Instalce.SeatIndex)
                 return false;
 
             return base.AddParent(parent);
@@ -494,9 +503,28 @@ namespace TLab.XR.VRGrabber
                 seatIndex: TLabSyncClient.Instalce.SeatIndex,
                 transform: new WebObjectInfo { id = this.gameObject.name });
         }
-        #endregion SyncTransform
 
-        #region Divide
+        private void RbCompletion()
+        {
+            // Rigidbodyの同期にラグがあるとき，メッセージが届かない間はGravityを有効にしてローカルの環境で物理演算を行う．
+
+            // Windows 12's Core i 9: 400 -----> Size: 10
+            // Oculsu Quest 2: 72 -----> Size: 10 * 72 / 400 = 1.8 ~= 2
+
+#if UNITY_EDITOR
+            if (IsUseGravity == true && m_didnotReachCount > 10)
+            {
+#else
+            if (IsUseGravity == true && m_didnotReachCount > 2)
+            {
+#endif
+                if (m_gravityState == false && m_grabbed != TLabSyncClient.Instalce.SeatIndex)
+                    SetGravity(true);
+            }
+        }
+#endregion SyncTransform
+
+#region Divide
         public void OnDevideButtonClick()
         {
             Devide();
@@ -538,7 +566,7 @@ namespace TLab.XR.VRGrabber
             TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
             foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
         }
-        #endregion Divide
+#endregion Divide
 
         public void ShutdownGrabber(bool deleteCache)
         {
@@ -571,6 +599,9 @@ namespace TLab.XR.VRGrabber
 
         protected override void Update()
         {
+            RbCompletion();
+            CashRbVelocity();
+
             if (m_mainParent != null)
             {
                 if (m_subParent != null && m_scaling)
@@ -587,9 +618,11 @@ namespace TLab.XR.VRGrabber
             {
                 m_scaleInitialDistance = -1.0f;
 
-                if (CanAutoSync == true)
+                if (EnableAutoSync == true)
                     SyncRTCTransform();
             }
+
+            m_didnotReachCount++;
         }
 
         private void OnDestroy()
