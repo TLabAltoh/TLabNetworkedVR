@@ -507,6 +507,7 @@ namespace TLab.XR.VRGrabber
         private void RbCompletion()
         {
             // Rigidbodyの同期にラグがあるとき，メッセージが届かない間はGravityを有効にしてローカルの環境で物理演算を行う．
+            // ただし，誰かがオブジェクトを掴んでいることが分かっているときは，推測の物理演算は行わない．
 
             // Windows 12's Core i 9: 400 -----> Size: 10
             // Oculsu Quest 2: 72 -----> Size: 10 * 72 / 400 = 1.8 ~= 2
@@ -518,13 +519,16 @@ namespace TLab.XR.VRGrabber
             if (IsUseGravity == true && m_didnotReachCount > 2)
             {
 #endif
-                if (m_gravityState == false && m_grabbed != TLabSyncClient.Instalce.SeatIndex)
-                    SetGravity(true);
+                if(m_grabbed != -1 &&
+                   m_grabbed != -2 &&
+                   m_grabbed != TLabSyncClient.Instalce.SeatIndex)
+                    if (m_gravityState == false)
+                        SetGravity(true);
             }
         }
 #endregion SyncTransform
 
-#region Divide
+        #region Divide
         public void OnDevideButtonClick()
         {
             Devide();
@@ -566,7 +570,7 @@ namespace TLab.XR.VRGrabber
             TLabSyncGrabbable[] grabbables = GetComponentsInTargets<TLabSyncGrabbable>(DivideTargets);
             foreach (TLabSyncGrabbable grabbable in grabbables) grabbable.SyncTransform();
         }
-#endregion Divide
+        #endregion Divide
 
         public void ShutdownGrabber(bool deleteCache)
         {
