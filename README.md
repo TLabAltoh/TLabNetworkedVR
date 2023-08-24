@@ -1,28 +1,36 @@
-# TLabVRGrabber
-Assets that support object manipulation for VR in Unity  
-- Supports both hand tracking and controllers  
+# TLabNetworkedVR
+For VR development in Unity  
+Assets supporting synchronisation of objects in VR space  
+
+## Note
+- TLabVRGrabber has been renamed TLabNetworkedVR due to expanded functionality.
+- Due to continued destructive updates, I recommend those who want to use the stable version to download the package from the release.
+
+## Features
+- Supports both hand tracking and controllers
 - Rigidbody Synchronization
+- VoiceChat
+- Websocket and P2P together
 
 ## Screenshot
-[Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Kensyu)  
+[Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
 <img src="Media/tlab-grabbable-controller.gif" width="256">  
 <img src="Media/tlab-grabbable-handtracking.gif" width="256">
 
 ## Getting Started
+
 ### Prerequisites
 - Unity 2021.3.23f1  
 - Oculus Integration (Install from asset store)  
 - node (v16.15.0)
 - [NativeWebsocket](https://github.com/endel/NativeWebSocket)
+
 ### Installing
-Clone the repository to any directory under Assets in the Unity project that will use the assets with the following command  
-```
-git clone https://github.com/TLabAltoh/TLabVRGrabber.git
-```
-If you are adding to an existing git project, use the following command instead
-```
-git submodule add https://github.com/TLabAltoh/TLabVRGrabber.git
-```
+Clone the repository or download it from the release, place it under any Unity project and use it
+
+### Tutorial
+Sample scenes are currently being created.
+
 ## Link
-- [Sample project using this asset](https://github.com/TLabAltoh/VR_Kensyu)  
-- [See below for the multiplayer server code](https://github.com/TLabAltoh/VR_Kensyu/tree/master/Server/SyncServer)
+- [Sample project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
+- [See below for the multiplayer server code](https://github.com/TLabAltoh/VR_Classroom/tree/master/Server/)
