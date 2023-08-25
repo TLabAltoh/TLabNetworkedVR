@@ -29,7 +29,8 @@ Assets supporting synchronisation of objects in VR space
 Clone the repository or download it from the release, place it under any Unity project and use it
 
 ### Tutorial
-Sample scenes are currently being created.
+Please refer to the [sample project](https://github.com/TLabAltoh/VR_Classroom) that uses this asset, which describes how to set up the server.  
+I am planning to release a simpler sample project in the future.
 
 ## Link
 - [Sample project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
