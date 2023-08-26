@@ -11,6 +11,7 @@ Assets supporting synchronisation of objects in VR space
 - Rigidbody Synchronization
 - VoiceChat
 - Websocket and P2P together
+- Sync Animator
 
 ## Screenshot
 [Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
