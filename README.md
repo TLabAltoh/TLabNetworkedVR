@@ -15,8 +15,16 @@ Assets supporting synchronisation of objects in VR space
 
 ## Screenshot
 [Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
-<img src="Media/tlab-grabbable-controller.gif" width="256">  
-<img src="Media/tlab-grabbable-handtracking.gif" width="256">
+<table>
+<tr>
+   <td> 
+      <img src="Media/tlab-grabbable-controller.gif" width="256">
+   </td>
+   <td> 
+      <img src="Media/tlab-grabbable-handtracking.gif" width="256">
+   </td>
+</tr>
+</table>
 
 ## Getting Started
 
@@ -32,6 +40,28 @@ Clone the repository or download it from the release, place it under any Unity p
 ### Tutorial
 Please refer to the [sample project](https://github.com/TLabAltoh/VR_Classroom) that uses this asset, which describes how to set up the server.  
 I am planning to release a simpler sample project in the future.
+
+## System Design Overview
+### Network
+<table>
+<tr>
+   <td> 
+      <img src="Media/webrtc-signaling.png" width="256">
+   </td>
+   <td> 
+      <img src="Media/world-sync.png" width="256">
+   </td>
+</tr>
+</table>
+
+### Object Divide
+<table>
+<tr>
+   <td> 
+      <img src="Media/object-divide.png" width="256">
+   </td>
+</tr>
+</table>
 
 ## Link
 - [Sample project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
