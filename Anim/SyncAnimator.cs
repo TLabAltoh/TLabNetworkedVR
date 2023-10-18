@@ -4,14 +4,14 @@ using UnityEngine;
 namespace TLab.XR.VRGrabber
 {
     [System.Serializable]
-    public class TLabAnimParameterInfo
+    public class AnimParameter
     {
         public AnimatorControllerParameterType type;
         public string name;
         public int lastValueHash;
     }
 
-    public class TLabSyncAnim : MonoBehaviour
+    public class SyncAnimator : MonoBehaviour
     {
         [SerializeField] private Animator m_animator;
         private Hashtable m_parameters = new Hashtable();
@@ -26,9 +26,9 @@ namespace TLab.XR.VRGrabber
             }
         }
 
-        public void SyncAnim(TLabAnimParameterInfo parameter)
+        public void SyncAnim(AnimParameter parameter)
         {
-            TLabSyncJson obj = new TLabSyncJson
+            var obj = new TLabSyncJson
             {
                 role = (int)WebRole.GUEST,
                 action = (int)WebAction.SYNCANIM,
@@ -58,9 +58,7 @@ namespace TLab.XR.VRGrabber
                     obj.animator.triggerVal = parameter.name;
                     break;
             }
-
-            string json = JsonUtility.ToJson(obj);
-            TLabSyncClient.Instalce.SendWsMessage(json);
+            SyncClient.Instance.SendWsMessage(JsonUtility.ToJson(obj));
         }
 
         public void SyncAnimFromOutside(WebAnimInfo webAnimator)
@@ -88,27 +86,31 @@ namespace TLab.XR.VRGrabber
 
         public void ClearAnim()
         {
-            TLabSyncJson obj = new TLabSyncJson
+            var obj = new TLabSyncJson
             {
                 role = (int)WebRole.GUEST,
                 action = (int)WebAction.CLEARANIM,
                 animator = new WebAnimInfo { id = this.transform.name }
             };
-
-            string json = JsonUtility.ToJson(obj);
-            TLabSyncClient.Instalce.SendWsMessage(json);
+            SyncClient.Instance.SendWsMessage(JsonUtility.ToJson(obj));
         }
 
         public void ShutdownAnimator(bool deleteCache)
         {
-            if (deleteCache == true) ClearAnim();
+            if (deleteCache)
+            {
+                ClearAnim();
+            }
         }
 
         private void OnChangeParameter(string paramName, int hashCode)
         {
-            TLabAnimParameterInfo parameterInfo = m_parameters[paramName] as TLabAnimParameterInfo;
+            var parameterInfo = m_parameters[paramName] as AnimParameter;
 
-            if (parameterInfo == null) return;
+            if (parameterInfo == null)
+            {
+                return;
+            }
 
             parameterInfo.lastValueHash = hashCode;
         }
@@ -133,13 +135,21 @@ namespace TLab.XR.VRGrabber
             m_animator.SetTrigger(paramName);
         }
 
+        void Reset()
+        {
+            if (m_animator == null)
+            {
+                m_animator = GetComponent<Animator>();
+            }
+        }
+
         void Start()
         {
             int parameterLength = m_animator.parameters.Length;
             for (int i = 0; i < parameterLength; i++)
             {
-                TLabAnimParameterInfo parameterInfo = new TLabAnimParameterInfo();
-                AnimatorControllerParameter parameter = m_animator.GetParameter(i);
+                var parameterInfo = new AnimParameter();
+                var parameter = m_animator.GetParameter(i);
                 parameterInfo.type = parameter.type;
                 parameterInfo.name = parameter.name;
 
@@ -164,12 +174,12 @@ namespace TLab.XR.VRGrabber
                 m_parameters[parameterInfo.name] = parameterInfo;
             }
 
-            TLabSyncClient.Instalce.AddSyncAnimator(this.gameObject.name, this);
+            SyncClient.Instance.AddSyncAnimator(this.gameObject.name, this);
         }
 
         void Update()
         {
-            foreach (TLabAnimParameterInfo parameter in m_parameters.Values)
+            foreach (AnimParameter parameter in m_parameters.Values)
             {
                 int prevValueHash = parameter.lastValueHash;
                 int currentValueHash;

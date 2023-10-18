@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TLab.Network.VoiceChat
 {
-    public class TLabVoiceChatFilter : MonoBehaviour
+    public class VoiceChatFilter : MonoBehaviour
     {
         private ConcurrentQueue<float[]> m_bufferQueue = new ConcurrentQueue<float[]>();
 
@@ -14,7 +14,10 @@ namespace TLab.Network.VoiceChat
 
         void OnAudioFilterRead(float[] data, int channels)
         {
-            if (m_bufferQueue.Count == 0) return;
+            if (m_bufferQueue.Count == 0)
+            {
+                return;
+            }
 
             float[] copyBuffer;
             m_bufferQueue.TryDequeue(out copyBuffer);
@@ -22,8 +25,12 @@ namespace TLab.Network.VoiceChat
             int chanelSize = data.Length / channels;
 
             for (int i = 0; i < chanelSize; i++)
+            {
                 for (int j = 0; j < channels; j++)
+                {
                     data[i * channels + j] = copyBuffer[i] * 20f;
+                }
+            }
         }
     }
 }

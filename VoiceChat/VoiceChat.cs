@@ -10,22 +10,20 @@ using TLab.Network.WebRTC;
 namespace TLab.Network.VoiceChat
 {
     [RequireComponent(typeof(AudioSource))]
-    [RequireComponent(typeof(TLabWebRTCDataChannel))]
-    public class TLabWebRTCVoiceChat : MonoBehaviour
+    [RequireComponent(typeof(WebRTCDataChannel))]
+    public class VoiceChat : MonoBehaviour
     {
         [Header("RTCDataChannel")]
-
-        [SerializeField] private TLabWebRTCDataChannel m_dataChannel;
+        [SerializeField] private WebRTCDataChannel m_dataChannel;
 
         [Header("Audio Info")]
-
         [Tooltip("Playback the sound recorded from the microphone yourself or")]
         [SerializeField] private bool m_loopBackSelf = false;
 
         [Tooltip("Delivering input from the microphone or")]
         [SerializeField] public bool m_isStreaming = false;
 
-        public static TLabWebRTCVoiceChat Instance;
+        public static VoiceChat Instance;
 
         //
         // Own sound
@@ -40,10 +38,10 @@ namespace TLab.Network.VoiceChat
         private int m_writeHead;
         private int m_readHead;
 
-        private POTBuf[] potBuffers = new POTBuf[POTBuf.POT_max + 1];
+        private POTBuf[] m_potBuffers = new POTBuf[POTBuf.POT_max + 1];
 
-        public delegate void MicCallbackDelegate(float[] buff);
-        public MicCallbackDelegate floatsInDelegate;
+        public delegate void MicCallback(float[] buff);
+        public MicCallback floatsInDelegate;
 
         private byte[] m_voiceBuffer = new byte[PACKET_BUFFER_SIZE];
         private int m_vbWriteHead = 0;
@@ -60,7 +58,7 @@ namespace TLab.Network.VoiceChat
         private Hashtable m_voicePlayers = new Hashtable();
 
         //
-        private const string m_thisName = "[tlabvoicechat] ";
+        private const string THIS_NAME = "[tlabvoicechat] ";
 
         /*
          * Obtain microphone input in real time
@@ -99,7 +97,9 @@ namespace TLab.Network.VoiceChat
             public POTBuf(int POT)
             {
                 for (int r = 0; r < redundancy; r++)
+                {
                     internalBuffers[r] = new float[1 << POT];
+                }
             }
         }
 
@@ -112,7 +112,7 @@ namespace TLab.Network.VoiceChat
         }
 #endif
 
-        public void RegistClient(string name, TLabVoiceChatPlayer player)
+        public void RegistClient(string name, VoiceChatPlayer player)
         {
             m_voicePlayers[name] = player;
         }
@@ -125,7 +125,9 @@ namespace TLab.Network.VoiceChat
         private void SetupBuffers()
         {
             for (int k = POTBuf.POT_min; k <= POTBuf.POT_max; k++)
-                potBuffers[k] = new POTBuf(k);
+            {
+                m_potBuffers[k] = new POTBuf(k);
+            }
         }
 
         private unsafe void LongCopy(byte* src, byte* dst, int count)
@@ -166,8 +168,11 @@ namespace TLab.Network.VoiceChat
 
         public void OnVoice(string dstID, string srcID, byte[] voiceBytes)
         {
-            TLabVoiceChatPlayer player = m_voicePlayers[srcID] as TLabVoiceChatPlayer;
-            if (player == null) return;
+            var player = m_voicePlayers[srcID] as VoiceChatPlayer;
+            if (player == null)
+            {
+                return;
+            }
 
             byte[] voiceBuffer = Decompress(voiceBytes);
             float[] voice = new float[VOICE_BUFFER_SIZE];
@@ -176,7 +181,9 @@ namespace TLab.Network.VoiceChat
             {
                 fixed (byte* src = voiceBuffer)
                 fixed (float* dst = voice)
+                {
                     LongCopy(src, (byte*)dst, PACKET_BUFFER_SIZE);
+                }
             }
 
             player.PlayVoice(voice);
@@ -184,8 +191,8 @@ namespace TLab.Network.VoiceChat
 
         public static byte[] Compress(byte[] data)
         {
-            MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(output, System.IO.Compression.CompressionLevel.Optimal))
+            var output = new MemoryStream();
+            using (var dstream = new DeflateStream(output, System.IO.Compression.CompressionLevel.Optimal))
             {
                 dstream.Write(data, 0, data.Length);
             }
@@ -194,9 +201,9 @@ namespace TLab.Network.VoiceChat
 
         public static byte[] Decompress(byte[] data)
         {
-            MemoryStream input = new MemoryStream(data);
-            MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(input, CompressionMode.Decompress))
+            var input = new MemoryStream(data);
+            var output = new MemoryStream();
+            using (var dstream = new DeflateStream(input, CompressionMode.Decompress))
             {
                 dstream.CopyTo(output);
             }
@@ -207,10 +214,15 @@ namespace TLab.Network.VoiceChat
         {
             string deviceList = "Currently connected device:\n";
             foreach (string deveice in Microphone.devices)
+            {
                 deviceList += "\t" + deveice + "\n";
-            Debug.Log(m_thisName + deviceList);
+            }
+            Debug.Log(THIS_NAME + deviceList);
 
-            if (Microphone.devices.Length > 0) return Microphone.devices[0];
+            if (Microphone.devices.Length > 0)
+            {
+                return Microphone.devices[0];
+            }
 
             return null;
         }
@@ -221,7 +233,7 @@ namespace TLab.Network.VoiceChat
 
             if (m_microphoneName == null)
             {
-                Debug.LogError(m_thisName + "mic device is empty");
+                Debug.LogError(THIS_NAME + "mic device is empty");
                 return false;
             }
 
@@ -229,11 +241,13 @@ namespace TLab.Network.VoiceChat
 
             if (m_microphoneClip == null)
             {
-                Debug.LogError(m_thisName + "Failed to recording, using " + m_microphoneName);
+                Debug.LogError(THIS_NAME + "Failed to recording, using " + m_microphoneName);
                 return false;
             }
             else
-                Debug.Log(m_thisName + "Start recording, using " + m_microphoneName + ", samples: " + m_microphoneClip.samples + ", channels: " + m_microphoneClip.channels);
+            {
+                Debug.Log(THIS_NAME + "Start recording, using " + m_microphoneName + ", samples: " + m_microphoneClip.samples + ", channels: " + m_microphoneClip.channels);
+            }
 
             return true;
         }
@@ -243,7 +257,10 @@ namespace TLab.Network.VoiceChat
             m_dataChannel.Join(this.gameObject.name, "VoiceChat");
 
             m_recording = StartRecording();
-            if (m_recording == false) return;
+            if (!m_recording)
+            {
+                return;
+            }
 
             if (m_loopBackSelf)
             {
@@ -252,7 +269,7 @@ namespace TLab.Network.VoiceChat
                 m_microphoneSource.loop = true;
                 m_microphoneSource.Play();
 
-                Debug.Log(m_thisName + "Sart Loop Back");
+                Debug.Log(THIS_NAME + "Sart Loop Back");
             }
 
             SetupBuffers();
@@ -342,7 +359,7 @@ namespace TLab.Network.VoiceChat
             var configuration = AudioSettings.GetConfiguration();
             configuration.dspBufferSize = VOICE_BUFFER_SIZE;
             AudioSettings.Reset(configuration);
-            Debug.Log(m_thisName + configuration.dspBufferSize);
+            Debug.Log(THIS_NAME + configuration.dspBufferSize);
         }
 
         public void CloseRTC()
@@ -352,12 +369,17 @@ namespace TLab.Network.VoiceChat
 
         private void Update()
         {
-            if (m_recording == false) return;
+            if (!m_recording)
+            {
+                return;
+            }
 
             m_writeHead = Microphone.GetPosition(m_microphoneName);
 
-            if (m_readHead == m_writeHead || potBuffers == null || !m_isStreaming)
+            if (m_readHead == m_writeHead || m_potBuffers == null || !m_isStreaming)
+            {
                 return;
+            }
 
             // Say audio.clip.samples (S)  = 100
             // if w=1, r=0, we want 1 sample.  ( S + 1 - 0 ) % S = 1 YES
@@ -366,7 +388,7 @@ namespace TLab.Network.VoiceChat
 
             for (int k = POTBuf.POT_max; k >= POTBuf.POT_min; k--)
             {
-                POTBuf B = potBuffers[k];
+                POTBuf B = m_potBuffers[k];
 
                 // 1 << k;
                 int n = B.buf.Length;
@@ -377,11 +399,21 @@ namespace TLab.Network.VoiceChat
                     m_readHead = (m_readHead + n) % m_microphoneClip.samples;
 
                     if (floatsInDelegate != null)
+                    {
                         floatsInDelegate(B.buf);
+                    }
 
                     B.Cycle();
                     nFloatsToGet -= n;
                 }
+            }
+        }
+
+        private void Reset()
+        {
+            if(m_dataChannel == null)
+            {
+                m_dataChannel = GetComponent<WebRTCDataChannel>();
             }
         }
 
@@ -394,7 +426,10 @@ namespace TLab.Network.VoiceChat
 
         private void Start()
         {
-            m_microphoneSource = GetComponent<AudioSource>();
+            if(m_microphoneSource == null)
+            {
+                m_microphoneSource = GetComponent<AudioSource>();
+            }
         }
     }
 }

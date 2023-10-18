@@ -3,12 +3,12 @@ using UnityEngine;
 namespace TLab.Network.VoiceChat
 {
     [RequireComponent(typeof(AudioSource))]
-    public class TLabVoiceChatPlayer : MonoBehaviour
+    public class VoiceChatPlayer : MonoBehaviour
     {
         [SerializeField] private bool m_useWebRTC = true;
 
         private AudioSource m_voicePlayer;
-        private TLabVoiceChatFilter m_voiceChatFilter;
+        private VoiceChatFilter m_voiceChatFilter;
 
         private const int PACKET_BUFFER_SIZE = VOICE_BUFFER_SIZE << SIZE_OF_FLOAT_LOG2;
         private const int VOICE_BUFFER_SIZE = 1024;
@@ -25,13 +25,17 @@ namespace TLab.Network.VoiceChat
         void Start()
         {
             if (m_useWebRTC == true)
-                TLabWebRTCVoiceChat.Instance.RegistClient(this.gameObject.name, this);
+            {
+                VoiceChat.Instance.RegistClient(this.gameObject.name, this);
+            }
             else
-                TLabVoiceChat.Instance.RegistClient(this.gameObject.name, this);
+            {
+                VoiceChat.Instance.RegistClient(this.gameObject.name, this);
+            }
 
             GameObject child = new GameObject("Player");
             child.transform.parent = this.gameObject.transform;
-            m_voiceChatFilter = child.AddComponent<TLabVoiceChatFilter>();
+            m_voiceChatFilter = child.AddComponent<VoiceChatFilter>();
 
             m_voicePlayer = child.AddComponent<AudioSource>();
             m_voicePlayer.loop = true;
@@ -40,7 +44,9 @@ namespace TLab.Network.VoiceChat
             //シームレス再生のテストに使用したコード
             float[] data = new float[VOICE_BUFFER_SIZE];
             for (int j = 0; j < VOICE_BUFFER_SIZE; j++)
+            {
                 data[j] = Mathf.Sin((float)j / VOICE_BUFFER_SIZE * 15 * Mathf.PI) * 2f;
+            }
             m_voiceChatFilter.SetData(data);
 
             m_voicePlayer.Play();

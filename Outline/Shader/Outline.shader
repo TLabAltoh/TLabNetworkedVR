@@ -1,4 +1,4 @@
-Shader "TLab/TLabOutline"
+Shader "TLab/Outline"
 {
     Properties
     {
