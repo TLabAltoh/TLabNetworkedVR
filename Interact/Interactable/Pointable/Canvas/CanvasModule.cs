@@ -146,10 +146,6 @@ namespace TLab.XR
 
         private void HandlePointerEvent(Canvas canvas, PointerEvent evt)
         {
-#if UNITY_EDITOR
-            Debug.Log(THIS_NAME + "Pointer Event Fired ! :" + evt.type.ToString());
-#endif
-
             Pointer pointer;
 
             switch (evt.type)
@@ -195,8 +191,6 @@ namespace TLab.XR
             Action<PointerEvent> pointerCanvasAction = (args) => HandlePointerEvent(pointerCanvas.canvas, args);
             m_pointerCanvasActionMap.Add(pointerCanvas, pointerCanvasAction);
             pointerCanvas.whenPointerEventRaised += pointerCanvasAction;
-
-            Debug.Log(THIS_NAME + "Pointable Canvas: " + pointerCanvas.name + " callback registed");
         }
 
         private void RemovePointerCanvas(PointableCanvas pointerCanvas)
@@ -218,8 +212,6 @@ namespace TLab.XR
                 m_pointersForDeletion.Add(pointer);
                 m_pointerMap.Remove(pointerID);
             }
-
-            Debug.Log(THIS_NAME + "Pointable Canvas: " + pointerCanvas.name + " callback removed");
         }
 
         public static void RegisterPointableCanvas(PointableCanvas pointerCanvas)
