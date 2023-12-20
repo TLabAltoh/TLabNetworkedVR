@@ -2,6 +2,9 @@
 For VR development in Unity  
 Assets supporting synchronisation of objects in VR space  
 
+## Document
+[click here](https://hackmd.io/A1JpgE7jQHeAWUWWOGIiMA)
+
 ## Note
 - TLabVRGrabber has been renamed TLabNetworkedVR due to expanded functionality.
 - Due to continued destructive updates, I recommend those who want to use the stable version to download the package from the release.
@@ -24,6 +27,7 @@ Assets supporting synchronisation of objects in VR space
 - Unity 2021.3.23f1  
 - Oculus Integration (Install from asset store)  
 - node (v16.15.0)
+- [unity.webrtc](https://github.com/Unity-Technologies/com.unity.webrtc)
 - [NativeWebsocket](https://github.com/endel/NativeWebSocket)
 
 ### Installing
