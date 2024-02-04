@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Interactor) + " (TLab)")]
     public class Interactor : MonoBehaviour
     {
         [Header("TLab XR Hand")]

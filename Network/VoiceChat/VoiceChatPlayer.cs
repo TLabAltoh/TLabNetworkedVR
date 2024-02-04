@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TLab.Network.VoiceChat
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChatPlayer) + " (TLab)")]
     [RequireComponent(typeof(AudioSource))]
     public class VoiceChatPlayer : MonoBehaviour
     {

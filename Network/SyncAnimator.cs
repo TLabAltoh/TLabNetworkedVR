@@ -12,10 +12,13 @@ namespace TLab.XR.Network
         public int lastValueHash;
     }
 
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(SyncAnimator) + " (TLab)")]
     public class SyncAnimator : NetworkedObject
     {
-        // TODO: HumanoidをAnimatorで編集できるのか確認する．
-        // 編集できる場合は，SyncAnimatorを継承したWebRTCでパラメータを同期するコンポーネントを作成する．
+        /**
+         * TODO: HumanoidをAnimatorで編集できるのか確認する．
+         * 編集できる場合は，SyncAnimatorを継承したWebRTCでパラメータを同期するコンポーネントを作成する．
+         */
 
         #region REGISTRY
 

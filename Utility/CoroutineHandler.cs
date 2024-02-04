@@ -1,10 +1,13 @@
 using System.Collections;
 using UnityEngine;
 
-// Reference: https://qiita.com/Teach/items/2fa2b4fa4334a0a3e34d
+/**
+ * Reference: https://qiita.com/Teach/items/2fa2b4fa4334a0a3e34d
+ */
 
 namespace TLab.XR
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(CoroutineHandler) + " (TLab)")]
     public class CoroutineHandler : MonoBehaviour
     {
         static protected CoroutineHandler m_Instance;

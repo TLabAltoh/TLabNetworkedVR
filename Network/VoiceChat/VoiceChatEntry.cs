@@ -1,36 +1,39 @@
 using System.Collections;
 using UnityEngine;
 using TLab.XR.Network;
-using TLab.Network.VoiceChat;
 
-public class VoiceChatEntry : MonoBehaviour
+namespace TLab.Network.VoiceChat
 {
-    [SerializeField] private VoiceChat m_voiceChat;
-
-    private bool socketIsOpen
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChatEntry) + " (TLab)")]
+    public class VoiceChatEntry : MonoBehaviour
     {
-        get
-        {
-            return (SyncClient.Instance != null &&
-                    SyncClient.Instance.socketIsOpen &&
-                    SyncClient.Instance.seatIndex != SyncClient.NOT_REGISTED);
-        }
-    }
+        [SerializeField] private VoiceChat m_voiceChat;
 
-    private IEnumerator WaitForConnection()
-    {
-        while (!socketIsOpen)
+        private bool socketIsOpen
         {
-            yield return null;
+            get
+            {
+                return (SyncClient.Instance != null &&
+                        SyncClient.Instance.socketIsOpen &&
+                        SyncClient.Instance.seatIndex != SyncClient.NOT_REGISTED);
+            }
         }
 
-        m_voiceChat.StartVoiceChat();
+        private IEnumerator WaitForConnection()
+        {
+            while (!socketIsOpen)
+            {
+                yield return null;
+            }
 
-        yield break;
-    }
+            m_voiceChat.StartVoiceChat();
 
-    void Start()
-    {
-        StartCoroutine(WaitForConnection());
+            yield break;
+        }
+
+        void Start()
+        {
+            StartCoroutine(WaitForConnection());
+        }
     }
 }

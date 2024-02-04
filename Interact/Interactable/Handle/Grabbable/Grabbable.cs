@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Grabbable) + " (TLab)")]
     [RequireComponent(typeof(ExclusiveController))]
     public class Grabbable : Handle
     {

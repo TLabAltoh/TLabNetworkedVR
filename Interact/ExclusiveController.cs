@@ -7,6 +7,7 @@ using static TLab.XR.ComponentExtention;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(ExclusiveController) + " (TLab)")]
     public class ExclusiveController : SyncTransformer
     {
         public enum HandType

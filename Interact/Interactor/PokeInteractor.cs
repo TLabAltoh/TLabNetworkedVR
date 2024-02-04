@@ -2,6 +2,7 @@
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(PokeInteractor) + " (TLab)")]
     class PokeInteractor : Interactor
     {
         [Header("Poke Settings")]

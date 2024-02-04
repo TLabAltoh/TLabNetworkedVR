@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(DebugInteractor) + " (TLab)")]
     public class DebugInteractor : Interactor
     {
         [SerializeField] private ExclusiveController[] m_controllers;

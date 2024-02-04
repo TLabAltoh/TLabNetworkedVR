@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Handle) + " (TLab)")]
     public class Handle : Interactable
     {
         #region REGISTRY

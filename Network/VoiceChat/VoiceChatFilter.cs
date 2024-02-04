@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TLab.Network.VoiceChat
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChatFilter) + " (TLab)")]
     public class VoiceChatFilter : MonoBehaviour
     {
         private ConcurrentQueue<float[]> m_bufferQueue = new ConcurrentQueue<float[]>();

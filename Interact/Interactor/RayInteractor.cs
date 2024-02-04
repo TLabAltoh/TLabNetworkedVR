@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(RayInteractor) + " (TLab)")]
     public class RayInteractor : Interactor
     {
         [Header("Raycast Settings")]

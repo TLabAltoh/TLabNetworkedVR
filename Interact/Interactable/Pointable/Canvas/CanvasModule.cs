@@ -45,6 +45,7 @@ namespace TLab.XR
         }
     }
 
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(CanvasModule) + " (TLab)")]
     public class CanvasModule : PointerInputModule
     {
         public static event Action<PointableCanvasEventArgs> WhenSelected;

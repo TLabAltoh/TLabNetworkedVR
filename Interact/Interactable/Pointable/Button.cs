@@ -3,6 +3,7 @@ using UnityEngine.Events;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Button) + " (TLab)")]
     public class Button : Pointable
     {
         [SerializeField] private UnityEvent[] m_onPress;

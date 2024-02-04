@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Rotatable) + " (TLab)")]
     [RequireComponent(typeof(ExclusiveController))]
     public class Rotatable : Pointable
     {

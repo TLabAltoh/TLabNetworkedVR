@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(ScalableHandle) + " (TLab)")]
     public class ScalableHandle : Handle
     {
         private Interactor m_hand;

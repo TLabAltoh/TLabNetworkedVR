@@ -4,6 +4,7 @@ using UnityEditor;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Interactable) + " (TLab)")]
     public class Interactable : MonoBehaviour
     {
         #region REGISTRY

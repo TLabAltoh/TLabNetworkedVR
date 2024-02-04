@@ -7,6 +7,7 @@ using NativeWebSocket;
 
 namespace TLab.Network.WebRTC
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(WebRTCDataChannel) + " (TLab)")]
     public class WebRTCDataChannel : MonoBehaviour
     {
         [Header("Signaling Server Address")]

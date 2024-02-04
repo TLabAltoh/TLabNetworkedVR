@@ -7,6 +7,7 @@ using TLab.Network.WebRTC;
 
 namespace TLab.Network.VoiceChat
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChat) + " (TLab)")]
     [RequireComponent(typeof(AudioSource))]
     [RequireComponent(typeof(WebRTCDataChannel))]
     public class VoiceChat : MonoBehaviour

@@ -28,6 +28,7 @@ namespace TLab.XR.Interact
         }
     }
 
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(Pointable) + " (TLab)")]
     public class Pointable : Interactable
     {
         #region REGISTRY

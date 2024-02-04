@@ -2,6 +2,7 @@
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(GrabInteractor) + " (TLab)")]
     public class GrabInteractor : Interactor
     {
         [Header("Grab Settings")]

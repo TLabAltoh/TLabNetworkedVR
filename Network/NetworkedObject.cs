@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace TLab.XR.Network
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(NetworkedObject) + " (TLab)")]
     public class NetworkedObject : MonoBehaviour
     {
         #region REGISTRY

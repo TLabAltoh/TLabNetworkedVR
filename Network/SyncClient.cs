@@ -8,6 +8,7 @@ using TLab.Network.WebRTC;
 
 namespace TLab.XR.Network
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(SyncClient) + " (TLab)")]
     [RequireComponent(typeof(WebRTCDataChannel))]
     public class SyncClient : MonoBehaviour
     {

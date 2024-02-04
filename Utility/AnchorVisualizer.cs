@@ -3,6 +3,7 @@ using UnityEngine;
 namespace TLab.XR
 {
 #if UNITY_EDITOR
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(AnchorVisualizer) + " (TLab)")]
     public class AnchorVisualizer : MonoBehaviour
     {
         [Header("Gizmo Settings")]

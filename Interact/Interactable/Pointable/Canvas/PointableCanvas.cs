@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(PointableCanvas) + " (TLab)")]
     public class PointableCanvas : Pointable
     {
         #region REGISTRY

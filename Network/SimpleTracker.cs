@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace TLab.XR.Network
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(SimpleTracker) + " (TLab)")]
     public class SimpleTracker : SyncTransformer
     {
         #region REGISTRY

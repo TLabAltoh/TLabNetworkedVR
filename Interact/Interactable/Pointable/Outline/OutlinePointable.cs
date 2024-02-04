@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace TLab.XR.Interact
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(OutlinePointable) + " (TLab)")]
     public class OutlinePointable : Pointable
     {
         [SerializeField, Range(0f, 0.1f)] protected float m_outlineWidth = 0.025f;

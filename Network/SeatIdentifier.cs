@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace TLab.XR.Network
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(SeatIdentifier) + " (TLab)")]
     public class SeatIdentifier : MonoBehaviour
     {
 #if UNITY_EDITOR

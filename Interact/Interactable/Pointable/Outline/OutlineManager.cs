@@ -6,6 +6,7 @@ using UnityEditor;
 namespace TLab.XR.Interact
 {
 #if UNITY_EDITOR
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(OutlineManager) + " (TLab)")]
     public class OutlineManager : MonoBehaviour
     {
         [SerializeField] private GameObject[] m_outlineTargets;

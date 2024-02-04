@@ -5,6 +5,7 @@ using UnityEditor;
 
 namespace TLab.XR.Network
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(SyncTransformer) + " (TLab)")]
     public class SyncTransformer : NetworkedObject
     {
         #region REGISTRY

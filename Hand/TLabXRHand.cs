@@ -3,6 +3,7 @@ using TLab.XR.Input;
 
 namespace TLab.XR
 {
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(TLabXRHand))]
     public class TLabXRHand : MonoBehaviour
     {
         [SerializeField] private InputDataSource m_inputDataSource;
@@ -12,16 +13,19 @@ namespace TLab.XR
 
         private string THIS_NAME => "[" + this.GetType().Name + "] ";
 
-        // Input Data Source
-
+        /**
+         * Input Data Source
+         */
         public InputDataSource inputDataSource => m_inputDataSource;
 
-        // Gesture
-
+        /**
+         * Gesture
+         */
         public string currentGesture => m_inputDataSource.currentGesture;
 
-        // Pose
-
+        /**
+         * Pose
+         */
         public Pose pointerPose => m_inputDataSource.pointerPose;
 
         public Pose rootPose => m_inputDataSource.rootPose;
@@ -39,7 +43,9 @@ namespace TLab.XR
             }
         }
 
-        // Ray Interactor's Input
+        /**
+         * Ray Interactor's Input
+         */
 
         public float pressStrength => m_inputDataSource.pressStrength;
 
@@ -49,7 +55,9 @@ namespace TLab.XR
 
         public bool onRelease => m_inputDataSource.onRelease;
 
-        // Grab Interactor's Input
+        /**
+         * Grab Interactor's Input
+         */
 
         public float grabStrength => m_inputDataSource.grabStrength;
 
