@@ -28,7 +28,7 @@ namespace TLab.Editor
 
     [CustomEditor(typeof(Transform), true)]
     [CanEditMultipleObjects]
-    public class TransformCustomInspector : UnityEditor.Editor
+    public class TransformCustomInspectorEditor : UnityEditor.Editor
     {
         /**
          * Created to reflect changes in Transform.localPosition while the scene is running, even after play ends
