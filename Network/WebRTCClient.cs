@@ -267,7 +267,6 @@ namespace TLab.Network.WebRTC
             {
                 m_peerConnectionDic[dst].OnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(dst)); };
 
-                /*
                 m_dataChannelDic[dst] = m_peerConnectionDic[dst].CreateDataChannel("data", m_dataChannelCnf);
                 m_dataChannelDic[dst].OnMessage = bytes => { m_onMessage.Invoke(m_userID, dst, bytes); };
                 m_dataChannelDic[dst].OnOpen = () => {
@@ -282,11 +281,9 @@ namespace TLab.Network.WebRTC
 #endif
                 };
                 m_dataChannelFlagDic[dst] = false;
-                */
             }
             else
             {
-                /*
                 m_peerConnectionDic[dst].OnDataChannel = channel =>
                 {
 #if DEBUG_LOG_DATACHANNEL
@@ -302,7 +299,6 @@ namespace TLab.Network.WebRTC
 #endif
                     };
                 };
-                */
             }
 
             InitAudioStream(dst);
@@ -575,9 +571,9 @@ namespace TLab.Network.WebRTC
 
         public void Exit()
         {
-            DestroyMediaStream();
-
             HangUpDataChannelAll();
+
+            DestroyMediaStream();
 
             SendWsMeg(RTCSigAction.EXIT, null, null, null);
 
