@@ -192,36 +192,33 @@ namespace TLab.Network.WebRTC
                 /**
                  * One transceiver is added at this timing, so AddTransceiver does not need to be executed.
                  */
-                m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+                RTCRtpSender sender = m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+
+                RTCRtpTransceiver transceiver = m_peerConnectionDic[dst].GetTransceivers().First(t => t.Sender == sender);
+                transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
+                RTCErrorType errorType = transceiver.SetCodecPreferences(audioCodecs.ToArray());
+                if (errorType != RTCErrorType.None)
+                {
+                    Debug.LogError(THIS_NAME + $"SetCodecPreferences Error: {errorType}");
+                }
             }
             else
             {
                 m_peerConnectionDic[dst].AddTransceiver(TrackKind.Audio);
             }
-
-            foreach (var transceiver in m_peerConnectionDic[dst].GetTransceivers())
-            {
-                if (transceiver.Sender.Track.Kind == TrackKind.Audio)
-                {
-                    transceiver.Direction = m_streamAudio ? RTCRtpTransceiverDirection.SendRecv : RTCRtpTransceiverDirection.RecvOnly;
-
-                    RTCErrorType errorType = transceiver.SetCodecPreferences(audioCodecs.ToArray());
-                    if (errorType != RTCErrorType.None)
-                    {
-                        Debug.LogError(THIS_NAME + $"SetCodecPreferences Error: {errorType}");
-                    }
-                }
-            }
         }
 
         private void InitVideoStream(string dst)
         {
-            if (m_streamVideo)
-            {
-                VideoStreamTrack track = new VideoStreamTrack(m_videoStreamSrc);
+            /**
+             * To be implemented in the future
+             */
+            //if (m_streamVideo)
+            //{
+            //    VideoStreamTrack track = new VideoStreamTrack(m_videoStreamSrc);
 
-                m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
-            }
+            //    m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+            //}
         }
         #endregion MEDIA_STREAMING
 

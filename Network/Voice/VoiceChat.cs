@@ -19,11 +19,12 @@ namespace TLab.Network.WebRTC.Voice
         private AudioClip m_microphoneClip;
         private string m_microphoneName;
         private bool m_recording = false;
-        public int m_frequency = 16000;
 
         public const int VOICE_BUFFER_SIZE = 1024;
         public const int CHANNEL = 1;
         public const int LENGTH_SECOUND = 1;
+
+        [HideInInspector] public int m_frequency = 16000;
 
         private Hashtable m_voicePlayers = new Hashtable();
 
