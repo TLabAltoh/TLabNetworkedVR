@@ -2,35 +2,36 @@ using System.Text;
 using UnityEngine;
 using TLab.Network.WebRTC;
 
-[ExecuteAlways] [RequireComponent(typeof(WebRTCDataChannel))]
-public class WebRTCDataChannelSample : MonoBehaviour
+[ExecuteAlways]
+[RequireComponent(typeof(WebRTCClient))]
+public class WebRTCClientSample : MonoBehaviour
 {
-    [SerializeField] private WebRTCDataChannel m_dataChannel;
+    [SerializeField] private WebRTCClient m_client;
 
     [SerializeField] private string m_userID;
     [SerializeField] private string m_roomID;
 
     void Reset()
     {
-        if(m_dataChannel == null)
+        if (m_client == null)
         {
-            m_dataChannel = GetComponent<WebRTCDataChannel>();
+            m_client = GetComponent<WebRTCClient>();
         }
     }
 
     public void Join()
     {
-        m_dataChannel.Join(m_userID, m_roomID);
+        m_client.Join(m_userID, m_roomID);
     }
 
     public void Exit()
     {
-        m_dataChannel.Exit();
+        m_client.Exit();
     }
 
     public void SendMessageTest(string message)
     {
-        m_dataChannel.SendRTCMsg(Encoding.UTF8.GetBytes(message));
+        m_client.SendRTCMsg(Encoding.UTF8.GetBytes(message));
     }
 
     public void OnMessage(string dst, string src, byte[] bytes)

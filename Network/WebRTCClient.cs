@@ -1,14 +1,28 @@
+//#define DEBUG_LOG_WEBSOCKET
+//#undef DEBUG_LOG_WEBSOCKET
+
+//#define DEBUG_LOG_PEERCONNECTION
+//#undef DEBUG_LOG_PEERCONNECTION
+
+//#define DEBUG_LOG_DATACHANNEL
+//#undef DEBUG_LOG_DATACHANNEL
+
+#define DEBUG_LOG_MEDIASTREAM
+//#undef DEBUG_LOG_MEDIASTREAM
+
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 using Unity.WebRTC;
 using UnityEngine;
 using UnityEngine.Events;
 using NativeWebSocket;
+using TLab.Network.WebRTC.Voice;
 
 namespace TLab.Network.WebRTC
 {
-    [AddComponentMenu("TLab/NetworkedVR/" + nameof(WebRTCDataChannel) + " (TLab)")]
-    public class WebRTCDataChannel : MonoBehaviour
+    [AddComponentMenu("TLab/NetworkedVR/" + nameof(WebRTCClient) + " (TLab)")]
+    public class WebRTCClient : MonoBehaviour
     {
         [Header("Signaling Server Address")]
         [SerializeField] private string m_serverAddr = "ws://localhost:3001";
@@ -17,27 +31,34 @@ namespace TLab.Network.WebRTC
         [SerializeField] private string m_userID;
         [SerializeField] private string m_roomID;
 
+        [Header("Audio Streaming Option")]
+        [SerializeField] private bool m_streamAudio = false;
+        [SerializeField] private VoiceChat m_voiceChat;
+
+        [Header("Video Streaming Option")]
+        [SerializeField] private bool m_streamVideo = false;
+        [SerializeField] private Texture m_videoStreamDst;
+        [SerializeField] private Texture m_videoStreamSrc;
+
         [Header("On Message Callback")]
         [SerializeField] private UnityEvent<string, string, byte[]> m_onMessage;
 
-        // session dictionary
+        /**
+         * Session Dictionary
+         */
         private Dictionary<string, RTCPeerConnection> m_peerConnectionDic = new Dictionary<string, RTCPeerConnection>();
         private Dictionary<string, RTCDataChannel> m_dataChannelDic = new Dictionary<string, RTCDataChannel>();
         private Dictionary<string, bool> m_dataChannelFlagDic = new Dictionary<string, bool>();
         private Dictionary<string, List<RTCIceCandidate>> m_candidateDic = new Dictionary<string, List<RTCIceCandidate>>();
 
-        // websocket instance
         private WebSocket m_websocket;
 
-        // datachannle option
-        private bool? m_orderd;
-        private int? m_maxPacketLifeTime;
-        private int? m_maxRetransmits;
-        private string m_protocol;
-        private bool? m_negotiated;
-        private int? m_id;
+        private RTCDataChannelInit m_dataChannelCnf;
 
-        // this class name
+        private MediaStream m_receiveMediaStream;
+        private MediaStream m_sendMediaStream;
+        private Dictionary<string, string> m_mediaStreamIdDic = new Dictionary<string, string>();
+
         private string THIS_NAME => "[" + this.GetType().Name + "] ";
 
         public int eventCount => m_onMessage.GetPersistentEventCount();
@@ -71,7 +92,6 @@ namespace TLab.Network.WebRTC
                 foreach (RTCIceCandidate tmp in m_candidateDic[src])
                 {
                     m_peerConnectionDic[src].AddIceCandidate(tmp);
-                    Debug.Log(THIS_NAME + "add ice candidate");
                 }
                 m_candidateDic[src].Clear();
             }
@@ -85,6 +105,15 @@ namespace TLab.Network.WebRTC
             tlabICE.candidate = candidate.Candidate;
 
             SendWsMeg(RTCSigAction.ICE, null, tlabICE, dst);
+        }
+
+        private void OnIceCandidate(string dst, RTCIceCandidate candidate)
+        {
+            SendIceCandidate(dst, candidate);
+
+#if DEBUG_LOG_PEERCONNECTION
+            Debug.Log(THIS_NAME + $"On ICE candidate:\n {candidate.Candidate}");
+#endif
         }
 
         private void OnIceConnectionChange(RTCIceConnectionState state)
@@ -119,80 +148,165 @@ namespace TLab.Network.WebRTC
                     break;
             }
         }
-
-        private void OnIceCandidate(string dst, RTCIceCandidate candidate)
-        {
-            SendIceCandidate(dst, candidate);
-
-            Debug.Log(THIS_NAME + $"ICE candidate:\n {candidate.Candidate}");
-        }
         #endregion ICE_CANDIDATE
+
+        #region MEDIA_STREAMING
+        private void DestroyMediaStream()
+        {
+            m_receiveMediaStream?.Dispose();
+            m_receiveMediaStream = null;
+
+            m_sendMediaStream?.Dispose();
+            m_sendMediaStream = null;
+        }
+
+        public void OnPause(bool active)
+        {
+            foreach (RTCPeerConnection pc in m_peerConnectionDic.Values)
+            {
+                foreach (RTCRtpTransceiver transceiver in pc.GetTransceivers())
+                {
+                    transceiver.Sender.Track.Enabled = active;
+                }
+            }
+        }
+
+        public void InitAudioStream(string dst)
+        {
+            List<RTCRtpCodecCapability> audioCodecs = new List<RTCRtpCodecCapability>();
+            string[] excludeCodecTypes = new[] { "audio/CN", "audio/telephone-event" };
+            foreach (var codec in RTCRtpSender.GetCapabilities(TrackKind.Audio).codecs)
+            {
+                if (excludeCodecTypes.Count(type => codec.mimeType.Contains(type)) > 0)
+                {
+                    continue;
+                }
+
+                audioCodecs.Add(codec);
+            }
+
+            if (m_streamAudio)
+            {
+                AudioStreamTrack track = new AudioStreamTrack(m_voiceChat.microphoneSource);
+
+                /**
+                 * One transceiver is added at this timing, so AddTransceiver does not need to be executed.
+                 */
+                m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+            }
+            else
+            {
+                m_peerConnectionDic[dst].AddTransceiver(TrackKind.Audio);
+            }
+
+            foreach (var transceiver in m_peerConnectionDic[dst].GetTransceivers())
+            {
+                if (transceiver.Sender.Track.Kind == TrackKind.Audio)
+                {
+                    transceiver.Direction = m_streamAudio ? RTCRtpTransceiverDirection.SendRecv : RTCRtpTransceiverDirection.RecvOnly;
+
+                    RTCErrorType errorType = transceiver.SetCodecPreferences(audioCodecs.ToArray());
+                    if (errorType != RTCErrorType.None)
+                    {
+                        Debug.LogError(THIS_NAME + $"SetCodecPreferences Error: {errorType}");
+                    }
+                }
+            }
+        }
+
+        private void InitVideoStream(string dst)
+        {
+            if (m_streamVideo)
+            {
+                VideoStreamTrack track = new VideoStreamTrack(m_videoStreamSrc);
+
+                m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+            }
+        }
+        #endregion MEDIA_STREAMING
 
         #region SESSION_DESCRIPTION
         private void OnSetLocalSuccess(RTCPeerConnection pc)
         {
-            Debug.Log(THIS_NAME + $"SetLocalDescription complete");
+#if DEBUG_LOG_PEERCONNECTION
+            Debug.Log(THIS_NAME + $"SetLocalDescription complete.");
+#endif
         }
 
         private void OnSetRemoteSuccess(RTCPeerConnection pc)
         {
-            Debug.Log(THIS_NAME + $"SetRemoteDescription complete");
+#if DEBUG_LOG_PEERCONNECTION
+            Debug.Log(THIS_NAME + $"SetRemoteDescription complete.");
+#endif
         }
 
-        private void OnCreateSessionDescriptionError(RTCError e) { }
+        private void OnCreateSessionDescriptionError(RTCError error)
+        {
+            Debug.LogError(THIS_NAME + $"Filed to create Session Description: {error.message}");
+        }
 
-        private void OnSetSessionDescriptionError(ref RTCError error) { }
+        private void OnSetSessionDescriptionError(ref RTCError error)
+        {
+            Debug.LogError(THIS_NAME + $"Filed to set Sesstion Description: {error.message}");
+        }
         #endregion SESSION_DESCRIPTION
 
         #region SIGNALING
         private void CreatePeerConnection(string dst, bool call)
         {
-            Debug.Log(THIS_NAME + "create new peerConnection start");
-
             RTCConfiguration configuration = GetSelectedSdpSemantics();
             m_peerConnectionDic[dst] = new RTCPeerConnection(ref configuration);
             m_peerConnectionDic[dst].OnIceCandidate = candidate => { OnIceCandidate(dst, candidate); };
             m_peerConnectionDic[dst].OnIceConnectionChange = state => { OnIceConnectionChange(state); };
+            m_peerConnectionDic[dst].OnTrack = eventTrack => {
+                m_mediaStreamIdDic[eventTrack.Track.Id] = dst;
+                m_receiveMediaStream.AddTrack(eventTrack.Track);
+            };
 
-            if (call == true)
+            if (call)
             {
-                Debug.Log(THIS_NAME + "create new dataChennel start");
+                m_peerConnectionDic[dst].OnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(dst)); };
 
-                RTCDataChannelInit conf = new RTCDataChannelInit
-                {
-                    protocol = m_protocol,
-                    ordered = m_orderd,
-                    negotiated = m_negotiated,
-                    maxPacketLifeTime = m_maxPacketLifeTime,
-                    maxRetransmits = m_maxRetransmits,
-                    id = m_id
-                };
-
-                m_dataChannelDic[dst] = m_peerConnectionDic[dst].CreateDataChannel("data", conf);
+                /*
+                m_dataChannelDic[dst] = m_peerConnectionDic[dst].CreateDataChannel("data", m_dataChannelCnf);
                 m_dataChannelDic[dst].OnMessage = bytes => { m_onMessage.Invoke(m_userID, dst, bytes); };
                 m_dataChannelDic[dst].OnOpen = () => {
-                    Debug.Log(THIS_NAME + dst + ": DataChannel Open");
+#if DEBUG_LOG_DATACHANNEL
+                    Debug.Log(THIS_NAME + dst + ": DataChannel open.");
+#endif
                     m_dataChannelFlagDic[dst] = true;
                 };
                 m_dataChannelDic[dst].OnClose = () => {
-                    Debug.Log(THIS_NAME + dst + ": DataChannel Close");
+#if DEBUG_LOG_DATACHANNEL
+                    Debug.Log(THIS_NAME + dst + ": DataChannel close.");
+#endif
                 };
                 m_dataChannelFlagDic[dst] = false;
+                */
             }
             else
             {
+                /*
                 m_peerConnectionDic[dst].OnDataChannel = channel =>
                 {
-                    Debug.Log(THIS_NAME + "dataChannel created on offer peerConnection");
+#if DEBUG_LOG_DATACHANNEL
+                    Debug.Log(THIS_NAME + "DataChannel created on offer peerConnection.");
+#endif
 
                     m_dataChannelFlagDic[dst] = true;
                     m_dataChannelDic[dst] = channel;
                     m_dataChannelDic[dst].OnMessage = bytes => { m_onMessage.Invoke(m_userID, dst, bytes); };
                     m_dataChannelDic[dst].OnClose = () => {
-                        Debug.Log(THIS_NAME + dst + ": DataChannel Close");
+#if DEBUG_LOG_DATACHANNEL
+                        Debug.Log(THIS_NAME + dst + ": DataChannel Close.");
+#endif
                     };
                 };
+                */
             }
+
+            InitAudioStream(dst);
+            InitVideoStream(dst);
         }
 
         private RTCConfiguration GetSelectedSdpSemantics()
@@ -200,27 +314,36 @@ namespace TLab.Network.WebRTC
             RTCConfiguration config = default;
             config.iceServers = new RTCIceServer[]
             {
-            new RTCIceServer { urls = new string[] { "stun:stun.l.google.com:19302" } }
+                //new RTCIceServer { urls = new string[] { "stun:stun.l.google.com:19302" } }
             };
 
             return config;
         }
 
-        private RTCDesc GetRTCDesc(RTCSessionDescription desc)
+        private RTCDesc EncodeSesstionDesc(RTCSessionDescription desc)
         {
             RTCDesc tlabDesc = new RTCDesc();
             tlabDesc.type = (int)desc.type;
             tlabDesc.sdp = desc.sdp;
 
+            Debug.Log(THIS_NAME + $"Encode Session Description: {desc.sdp}");
+
             return tlabDesc;
+        }
+
+        private RTCSessionDescription DecodeSesstionDesc(RTCDesc tlabDesc)
+        {
+            RTCSessionDescription result = new RTCSessionDescription();
+            result.type = (RTCSdpType)tlabDesc.type;
+            result.sdp = tlabDesc.sdp;
+
+            Debug.Log(THIS_NAME + $"Decode Session Description: { result.sdp }");
+
+            return result;
         }
 
         private IEnumerator OnCreateAnswerSuccess(string dst, RTCSessionDescription desc)
         {
-            Debug.Log(THIS_NAME + $"create answer success:\n{desc.sdp}");
-
-            Debug.Log(THIS_NAME + "peerConnection.setLocalDescription start");
-
             var op = m_peerConnectionDic[dst].SetLocalDescription(ref desc);
             yield return op;
 
@@ -234,16 +357,11 @@ namespace TLab.Network.WebRTC
                 OnSetSessionDescriptionError(ref error);
             }
 
-            Debug.Log(THIS_NAME + "peerConnection send local description start");
-
-            SendWsMeg(RTCSigAction.ANSWER, GetRTCDesc(desc), null, dst);
+            SendWsMeg(RTCSigAction.ANSWER, EncodeSesstionDesc(desc), null, dst);
         }
 
         private IEnumerator OnCreateOfferSuccess(string dst, RTCSessionDescription desc)
         {
-            Debug.Log(THIS_NAME + $"Offer from pc\n{desc.sdp}");
-
-            Debug.Log(THIS_NAME + "pc setLocalDescription start");
             var op = m_peerConnectionDic[dst].SetLocalDescription(ref desc);
             yield return op;
 
@@ -257,17 +375,14 @@ namespace TLab.Network.WebRTC
                 OnSetSessionDescriptionError(ref error);
             }
 
-            Debug.Log(THIS_NAME + "pc send local description start");
-
-            SendWsMeg(RTCSigAction.OFFER, GetRTCDesc(desc), null, dst);
+            SendWsMeg(RTCSigAction.OFFER, EncodeSesstionDesc(desc), null, dst);
         }
 
         private IEnumerator OnAnswer(string src, RTCSessionDescription desc)
         {
-            Debug.Log(THIS_NAME + "peerConnection.setRemoteDescription start");
-
             var op2 = m_peerConnectionDic[src].SetRemoteDescription(ref desc);
             yield return op2;
+
             if (!op2.IsError)
             {
                 OnSetRemoteSuccess(m_peerConnectionDic[src]);
@@ -285,8 +400,6 @@ namespace TLab.Network.WebRTC
         {
             CreatePeerConnection(src, false);
 
-            Debug.Log(THIS_NAME + "peerConnection.setRemoteDescription start");
-
             var op2 = m_peerConnectionDic[src].SetRemoteDescription(ref desc);
             yield return op2;
 
@@ -299,8 +412,6 @@ namespace TLab.Network.WebRTC
                 var error = op2.Error;
                 OnSetSessionDescriptionError(ref error);
             }
-
-            Debug.Log(THIS_NAME + "peerConnection.createAnswer start");
 
             var op3 = m_peerConnectionDic[src].CreateAnswer();
             yield return op3;
@@ -317,17 +428,10 @@ namespace TLab.Network.WebRTC
             yield break;
         }
 
-        private IEnumerator Call(string dst)
+        private IEnumerator PeerNegotiationNeeded(string dst)
         {
-            if (m_dataChannelDic.ContainsKey(dst) || m_dataChannelFlagDic.ContainsKey(dst) || m_peerConnectionDic.ContainsKey(dst))
-            {
-                Debug.LogError(THIS_NAME + "dst is already exist");
-                yield break;
-            }
+            Debug.Log(THIS_NAME + $"Create Offer");
 
-            CreatePeerConnection(dst, true);
-
-            Debug.Log(THIS_NAME + "pc createOffer start");
             var op = m_peerConnectionDic[dst].CreateOffer();
             yield return op;
 
@@ -340,113 +444,140 @@ namespace TLab.Network.WebRTC
                 OnCreateSessionDescriptionError(op.Error);
             }
         }
+
+        private IEnumerator Call(string dst)
+        {
+            if (m_dataChannelDic.ContainsKey(dst) || m_dataChannelFlagDic.ContainsKey(dst) || m_peerConnectionDic.ContainsKey(dst))
+            {
+                Debug.LogError(THIS_NAME + $"dst: {dst} is already exist.");
+                yield break;
+            }
+
+            CreatePeerConnection(dst, true);
+        }
         #endregion SIGNALING
 
         #region UTILITY
-        private RTCSessionDescription GetDescription(RTCDesc tlabDesc)
+        public void Join(string userID, string roomID, RTCDataChannelInit dataChannelOnf = null)
         {
-            RTCSessionDescription result = new RTCSessionDescription();
-            result.type = (RTCSdpType)tlabDesc.type;
-            result.sdp = tlabDesc.sdp;
-            return result;
-        }
+            m_userID = userID;
+            m_roomID = roomID;
 
-        public void Join(string userID, string roomID,
-                         string protocol = null, bool? orderd = null, bool? negotiated = null,
-                         int? maxPacketLifeTime = null, int? maxRetransmits = null, int? id = null)
-        {
-            // User info for signaling server
-            this.m_userID = userID;
-            this.m_roomID = roomID;
+            m_dataChannelCnf = dataChannelOnf;
 
-            // Datachannel option
-            m_protocol = protocol;
-            m_orderd = orderd;
-            m_negotiated = negotiated;
-            m_maxPacketLifeTime = maxPacketLifeTime;
-            m_maxRetransmits = maxRetransmits;
-            m_id = id;
+            DestroyMediaStream();
+
+            m_sendMediaStream = new MediaStream();
+            m_receiveMediaStream = new MediaStream();
+            m_receiveMediaStream.OnAddTrack = eventTrack =>
+            {
+                if (eventTrack.Track is VideoStreamTrack videoTrack)
+                {
+                    Debug.Log(THIS_NAME + $"OnVideoTrack");
+
+                    videoTrack.OnVideoReceived += texture =>
+                    {
+                        Debug.Log(THIS_NAME + $"OnVideoTrackReceived {videoTrack}, texture={texture.width}x{texture.height}");
+
+                        m_videoStreamDst = (Texture2D)texture;
+                    };
+                }
+
+                if (eventTrack.Track is AudioStreamTrack audioTrack)
+                {
+                    Debug.Log(THIS_NAME + $"OnAudioTrack.");
+
+                    if (m_mediaStreamIdDic.ContainsKey(eventTrack.Track.Id))
+                    {
+                        string dst = m_mediaStreamIdDic[eventTrack.Track.Id];
+
+                        m_voiceChat.OnVoice(m_userID, dst, audioTrack);
+
+                        m_mediaStreamIdDic.Remove(eventTrack.Track.Id);
+                    }
+                }
+            };
 
             SendWsMeg(RTCSigAction.JOIN, null, null, null);
         }
 
-        public void HangUp(string src)
+        public void HangUpDataChannel(string src)
         {
-            // Close datachannel befor offer
-            if (m_dataChannelDic.ContainsKey(src) == true)
+            /**
+             * Close Datachannel befor offer
+             */
+            if (m_dataChannelDic.ContainsKey(src))
             {
                 m_dataChannelDic[src].Close();
                 m_dataChannelDic[src] = null;
                 m_dataChannelDic.Remove(src);
 
-                Debug.Log(THIS_NAME + "hung up datachannel: " + src);
+#if DEBUG_LOG_DATACHANNEL
+                Debug.Log(THIS_NAME + "Hung up Datachannel: " + src);
+#endif
             }
 
-            // Datachannel flag delete
-            if (m_dataChannelFlagDic.ContainsKey(src) == true)
+            /**
+             * Datachannel flag delete
+             */
+            if (m_dataChannelFlagDic.ContainsKey(src))
             {
                 m_dataChannelFlagDic.Remove(src);
 
-                Debug.Log(THIS_NAME + "remove datachannle flag: " + src);
+#if DEBUG_LOG_DATACHANNEL
+                Debug.Log(THIS_NAME + "Remove Datachannle flag: " + src);
+#endif
             }
 
-            // Close datachannel befor offer
-            if (m_peerConnectionDic.ContainsKey(src) == true)
+            /**
+             * Close peerConnection befor offer
+             */
+            if (m_peerConnectionDic.ContainsKey(src))
             {
+                foreach (RTCRtpTransceiver transceiver in m_peerConnectionDic[src].GetTransceivers())
+                {
+                    if (transceiver.Sender != null)
+                    {
+                        transceiver.Sender.Track.Stop();
+                        m_sendMediaStream.RemoveTrack(transceiver.Sender.Track);
+                        transceiver.Sender.Track.Dispose();
+                    }
+
+                    if (transceiver.Receiver != null)
+                    {
+                        transceiver.Receiver.Track.Stop();
+                        m_receiveMediaStream.RemoveTrack(transceiver.Receiver.Track);
+                        transceiver.Receiver.Track.Dispose();
+                    }
+                }
+
                 m_peerConnectionDic[src].Close();
                 m_peerConnectionDic[src] = null;
                 m_peerConnectionDic.Remove(src);
 
-                Debug.Log(THIS_NAME + "remove peerconnection: " + src);
+#if DEBUG_LOG_DATACHANNEL
+                Debug.Log(THIS_NAME + "Remove peerConnection: " + src);
+#endif
             }
         }
 
-        public void HangUpAll()
+        public void HangUpDataChannelAll()
         {
-            // https://dobon.net/vb/dotnet/programing/dictionarytoarray.html
-            // https://ja.stackoverflow.com/questions/10119/foreach%E6%96%87%E3%81%A7%E4%B8%AD%E8%BA%AB%E3%81%AE%E5%87%A6%E7%90%86%E4%B8%AD%E3%81%AB%E6%AF%8D%E9%9B%86%E5%90%88%E5%81%B4%E3%81%8C%E5%A4%89%E5%8C%96%E3%81%99%E3%82%8B%E3%81%A8movenext%E3%81%A7%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B
-
-            // Close datachannel befor offer
             if (m_dataChannelDic.Count > 0)
             {
                 List<string> dsts = new List<string>(m_dataChannelDic.Keys);
                 foreach (string dst in dsts)
                 {
-                    m_dataChannelDic[dst].Close();
-                    m_dataChannelDic[dst] = null;
-                    m_dataChannelDic.Remove(dst);
-                    Debug.Log(THIS_NAME + "hung up datachannel: " + dst);
-                }
-            }
-
-            // Datachannel flag delete
-            if (m_dataChannelFlagDic.Count > 0)
-            {
-                List<string> dsts = new List<string>(m_dataChannelFlagDic.Keys);
-                foreach (string dst in dsts)
-                {
-                    m_dataChannelFlagDic.Remove(dst);
-                    Debug.Log(THIS_NAME + "remove datachannle flag: " + dst);
-                }
-            }
-
-            // Close datachannel befor offer
-            if (m_peerConnectionDic.Count > 0)
-            {
-                List<string> dsts = new List<string>(m_peerConnectionDic.Keys);
-                foreach (string dst in dsts)
-                {
-                    m_peerConnectionDic[dst].Close();
-                    m_peerConnectionDic[dst] = null;
-                    m_peerConnectionDic.Remove(dst);
-                    Debug.Log(THIS_NAME + "remove peerconnection: " + dst);
+                    HangUpDataChannel(dst);
                 }
             }
         }
 
         public void Exit()
         {
-            HangUpAll();
+            DestroyMediaStream();
+
+            HangUpDataChannelAll();
 
             SendWsMeg(RTCSigAction.EXIT, null, null, null);
 
@@ -480,7 +611,9 @@ namespace TLab.Network.WebRTC
 
                 string json = JsonUtility.ToJson(obj);
 
-                Debug.Log(THIS_NAME + "send ws message: " + json);
+#if DEBUG_LOG_WEBSOCKET
+                Debug.Log(THIS_NAME + "Send websocket message: " + json);
+#endif
 
                 await m_websocket.SendText(json);
             }
@@ -496,16 +629,16 @@ namespace TLab.Network.WebRTC
                     AddIceCandidate(parse.src, parse.ice);
                     break;
                 case (int)RTCSigAction.OFFER:
-                    StartCoroutine(OnOffer(parse.src, GetDescription(parse.desc)));
+                    StartCoroutine(OnOffer(parse.src, DecodeSesstionDesc(parse.desc)));
                     break;
                 case (int)RTCSigAction.ANSWER:
-                    StartCoroutine(OnAnswer(parse.src, GetDescription(parse.desc)));
+                    StartCoroutine(OnAnswer(parse.src, DecodeSesstionDesc(parse.desc)));
                     break;
                 case (int)RTCSigAction.JOIN:
                     StartCoroutine(Call(parse.src));
                     break;
                 case (int)RTCSigAction.EXIT:
-                    HangUp(parse.src);
+                    HangUpDataChannel(parse.src);
                     break;
             }
         }
@@ -515,14 +648,18 @@ namespace TLab.Network.WebRTC
         {
             yield return -1;
 
-            Debug.Log(THIS_NAME + "create call back start");
-            Debug.Log(THIS_NAME + "connect to signaling server start");
+#if DEBUG_LOG_WEBSOCKET
+            Debug.Log(THIS_NAME + "Create call back start.");
+            Debug.Log(THIS_NAME + "Connect to signaling server start");
+#endif
 
             m_websocket = new WebSocket(m_serverAddr);
 
             m_websocket.OnOpen += () =>
             {
+#if DEBUG_LOG_WEBSOCKET
                 Debug.Log(THIS_NAME + "Connection open!");
+#endif
             };
 
             m_websocket.OnError += (e) =>
@@ -532,19 +669,25 @@ namespace TLab.Network.WebRTC
 
             m_websocket.OnClose += (e) =>
             {
+#if DEBUG_LOG_WEBSOCKET
                 Debug.Log(THIS_NAME + "Connection closed!");
+#endif
             };
 
             m_websocket.OnMessage += (bytes) =>
             {
                 string message = System.Text.Encoding.UTF8.GetString(bytes);
 
-                Debug.Log(THIS_NAME + "OnWsMessage: " + message);
+#if DEBUG_LOG_WEBSOCKET
+                Debug.Log(THIS_NAME + "On websocket message: " + message);
+#endif
 
                 OnWsMsg(message);
             };
 
-            // waiting for messages
+            /**
+             * Waiting for messages
+             */
             await m_websocket.Connect();
 
             yield break;
@@ -552,8 +695,10 @@ namespace TLab.Network.WebRTC
 
         private IEnumerator ConnectToSignalingServerStart()
         {
-            // I don't know how many frames it takes to close the Websocket client.
-            // So I'll wait for one frame anyway.
+            /**
+             * I don't know how many frames it takes to close the Websocket client.
+             * So I'll wait for one frame anyway.
+             */
 
             yield return null;
 
@@ -607,28 +752,15 @@ namespace TLab.Network.WebRTC
 
         void OnDestroy()
         {
-            // OnDestroy()ÇÕCloseWebSocketÇÃèIóπÇë“ã@Ç∑ÇÈ ?
+            /**
+             * OnDestroy() waits for CloseWebSocket() to exit ?
+             */
             CloseWebSocket();
         }
 
         void OnApplicationQuit()
         {
             CloseWebSocket();
-        }
-    }
-
-    public static class TLabWebRTCExtensions
-    {
-        public static string ToJson(this int? value)
-        {
-            if (value == null) return null;
-            return value.ToString();
-        }
-
-        public static int? TryToInt(this string value)
-        {
-            if (int.TryParse(value, out int result)) return result;
-            return null;
         }
     }
 }

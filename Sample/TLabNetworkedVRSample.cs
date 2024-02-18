@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TLab.XR.Interact;
 using TLab.XR.Network;
-using TLab.Network.VoiceChat;
+using TLab.Network.WebRTC.Voice;
 
 public class TLabNetworkedVRSample : MonoBehaviour
 {
@@ -12,14 +12,15 @@ public class TLabNetworkedVRSample : MonoBehaviour
 
     private IEnumerator ExitRoomTask()
     {
-        // delete obj
+        // Delete GameObject
 
         ExclusiveController.ClearRegistry();
         SyncAnimator.ClearRegistry();
 
         yield return new WaitForSeconds(0.5f);
 
-        // close socket
+        // Close Socket
+
         m_voiceChat.CloseRTC();
         m_syncClient.CloseRTC();
 

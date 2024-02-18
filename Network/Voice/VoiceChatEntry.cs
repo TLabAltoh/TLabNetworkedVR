@@ -1,13 +1,15 @@
 using System.Collections;
 using UnityEngine;
-using TLab.XR.Network;
+using TLab.Network.WebRTC.Voice;
 
-namespace TLab.Network.VoiceChat
+namespace TLab.XR.Network
 {
     [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChatEntry) + " (TLab)")]
     public class VoiceChatEntry : MonoBehaviour
     {
         [SerializeField] private VoiceChat m_voiceChat;
+
+        private string THIS_NAME => "[" + GetType() + "] ";
 
         private bool socketIsOpen
         {
@@ -23,7 +25,7 @@ namespace TLab.Network.VoiceChat
         {
             while (!socketIsOpen)
             {
-                yield return null;
+                yield return new WaitForSeconds(1f);
             }
 
             m_voiceChat.StartVoiceChat();

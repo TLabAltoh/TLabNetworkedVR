@@ -5,7 +5,6 @@ using UnityEditor;
 
 namespace TLab.XR.Interact
 {
-#if UNITY_EDITOR
     [AddComponentMenu("TLab/NetworkedVR/" + nameof(OutlineManager) + " (TLab)")]
     public class OutlineManager : MonoBehaviour
     {
@@ -18,6 +17,7 @@ namespace TLab.XR.Interact
 
         private const float ERROR = 1e-8f;
 
+#if UNITY_EDITOR
         // https://blog.syn-sophia.co.jp/articles/2022/10/17/outline_rendering_01
 
         public void SaveMesh(Mesh mesh, MeshFilter meshFilter)
@@ -226,6 +226,6 @@ namespace TLab.XR.Interact
             m_savePathMaterial = path.Remove(0, fullPath.Length + 1);
             return true;
         }
-    }
 #endif
+    }
 }

@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace TLab.XR
 {
-#if UNITY_EDITOR
     [AddComponentMenu("TLab/NetworkedVR/" + nameof(AnchorVisualizer) + " (TLab)")]
     public class AnchorVisualizer : MonoBehaviour
     {
@@ -20,6 +19,7 @@ namespace TLab.XR
 
         private const float HALF = 0.5f;
 
+#if UNITY_EDITOR
         void OnDrawGizmos()
         {
             if (!m_enable)
@@ -50,6 +50,6 @@ namespace TLab.XR
 
             Gizmos.matrix = cache;
         }
-    }
 #endif
+    }
 }

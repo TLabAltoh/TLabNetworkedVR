@@ -4,12 +4,13 @@ using UnityEngine;
 using NativeWebSocket;
 using TLab.XR.Interact;
 using TLab.XR.Humanoid;
+using TLab.Network;
 using TLab.Network.WebRTC;
 
 namespace TLab.XR.Network
 {
     [AddComponentMenu("TLab/NetworkedVR/" + nameof(SyncClient) + " (TLab)")]
-    [RequireComponent(typeof(WebRTCDataChannel))]
+    [RequireComponent(typeof(WebRTCClient))]
     public class SyncClient : MonoBehaviour
     {
         private string THIS_NAME => "[" + this.GetType().Name + "] ";
@@ -31,9 +32,9 @@ namespace TLab.XR.Network
         [SerializeField] private Transform[] m_respownAnchors;
         [SerializeField] private Transform m_instantiateAnchor;
 
-        [Tooltip("WebRTCDatachannel for synchronizing Transforms between players")]
-        [Header("WebRTCDataChannel")]
-        [SerializeField] private WebRTCDataChannel m_dataChannel;
+        [Tooltip("WebRTCClient for synchronizing Transforms between players")]
+        [Header("WebRTCClient")]
+        [SerializeField] private WebRTCClient m_webrtcClient;
 
         [Tooltip("Custom message callbacks")]
         [Header("Custom Event")]
@@ -136,6 +137,33 @@ namespace TLab.XR.Network
             }
 
             m_avatorInstanceQueue[seatIndex].Enqueue(go);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="seatIndex"></param>
+        /// <param name="go"></param>
+        /// <param name="respown"></param>
+        public void CloneAvator(int seatIndex, AvatorConfig config)
+        {
+            foreach (var avatorParts in m_avatorConfig.body)
+            {
+                var parts = avatorParts.parts;
+                var prefab = avatorParts.prefab;
+
+                var guestParts = m_instantiateAnchor != null ? Instantiate(prefab, m_instantiateAnchor.position, m_instantiateAnchor.rotation) : Instantiate(prefab);
+
+                var trackerName = GetBodyTrackerName("", seatIndex, parts);
+                guestParts.name = trackerName;
+
+                var identifier = guestParts.GetComponent<AvatorIdentifier>();
+                identifier.id = seatIndex;
+                identifier.partsId = trackerName;
+                identifier.avatorId = gameObject.name + "_" + seatIndex.ToString();
+
+                CacheAvator(seatIndex, guestParts);
+            }
         }
 
         /// <summary>
@@ -253,7 +281,7 @@ namespace TLab.XR.Network
                  */
                 var userID = gameObject.name + "_" + m_seatIndex.ToString();
                 var roomID = m_roomID;
-                m_dataChannel.Join(userID, roomID);
+                m_webrtcClient.Join(userID, roomID);
 
             };
             receiveCallbacks[(int)WebAction.EXIT] = (obj) => { };
@@ -296,24 +324,7 @@ namespace TLab.XR.Network
                     return;
                 }
 
-                /**
-                 * Visualize avatars of newly joined players
-                 */
-
-                foreach (var avatorParts in m_avatorConfig.body)
-                {
-                    var parts = avatorParts.parts;
-                    var prefab = avatorParts.prefab;
-
-                    var guestParts = null as GameObject;
-
-                    guestParts = m_instantiateAnchor != null ? Instantiate(prefab, m_instantiateAnchor.position, m_instantiateAnchor.rotation) : Instantiate(prefab);
-
-                    var trackerName = GetBodyTrackerName("", guestIndex, parts);
-                    guestParts.name = trackerName;
-
-                    CacheAvator(guestIndex, guestParts);
-                }
+                CloneAvator(guestIndex, m_avatorConfig);
 
                 m_guestTable[guestIndex] = true;
 
@@ -568,7 +579,7 @@ namespace TLab.XR.Network
         /// 
         /// </summary>
         /// <param name="bytes"></param>
-        public void SendRTCMessage(byte[] bytes) => m_dataChannel.SendRTCMsg(bytes);
+        public void SendRTCMessage(byte[] bytes) => m_webrtcClient.SendRTCMsg(bytes);
 
         #endregion RTC_MESSAGE
 
@@ -634,21 +645,21 @@ namespace TLab.XR.Network
         /// <summary>
         /// 
         /// </summary>
-        public void CloseRTC() => m_dataChannel.Exit();
+        public void CloseRTC() => m_webrtcClient.Exit();
 
         /// <summary>
         /// 
         /// </summary>
         public void ConfirmRTCCallbackRegisted()
         {
-            if (m_dataChannel == null)
+            if (m_webrtcClient == null)
             {
-                m_dataChannel = GetComponent<WebRTCDataChannel>();
+                m_webrtcClient = GetComponent<WebRTCClient>();
             }
 
-            if (m_dataChannel.eventCount == 0)
+            if (m_webrtcClient.eventCount == 0)
             {
-                m_dataChannel.SetCallback(OnRTCMessage);
+                m_webrtcClient.SetCallback(OnRTCMessage);
             }
         }
 
@@ -664,9 +675,9 @@ namespace TLab.XR.Network
         {
             Instance = this;
 
-            if (m_dataChannel == null)
+            if (m_webrtcClient == null)
             {
-                m_dataChannel = GetComponent<WebRTCDataChannel>();
+                m_webrtcClient = GetComponent<WebRTCClient>();
             }
         }
 
