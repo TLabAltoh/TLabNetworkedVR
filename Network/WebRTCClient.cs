@@ -160,7 +160,7 @@ namespace TLab.Network.WebRTC
             m_sendMediaStream = null;
         }
 
-        public void OnPause(bool active)
+        public void OnPauseAudio(bool active)
         {
             foreach (RTCPeerConnection pc in m_peerConnectionDic.Values)
             {
@@ -169,6 +169,11 @@ namespace TLab.Network.WebRTC
                     transceiver.Sender.Track.Enabled = active;
                 }
             }
+        }
+
+        public void OnPauseVideo(bool active)
+        {
+            // TODO
         }
 
         public void InitAudioStream(string dst)
@@ -220,6 +225,12 @@ namespace TLab.Network.WebRTC
             //    m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
             //}
         }
+
+        private void InitMediaStream(string dst)
+        {
+            InitAudioStream(dst);
+            InitVideoStream(dst);
+        }
         #endregion MEDIA_STREAMING
 
         #region SESSION_DESCRIPTION
@@ -251,6 +262,12 @@ namespace TLab.Network.WebRTC
         #region SIGNALING
         private void CreatePeerConnection(string dst, bool call)
         {
+            if (m_peerConnectionDic.ContainsKey(dst))
+            {
+                // peer has already been created
+                return;
+            }
+
             RTCConfiguration configuration = GetSelectedSdpSemantics();
             m_peerConnectionDic[dst] = new RTCPeerConnection(ref configuration);
             m_peerConnectionDic[dst].OnIceCandidate = candidate => { OnIceCandidate(dst, candidate); };
@@ -297,9 +314,6 @@ namespace TLab.Network.WebRTC
                     };
                 };
             }
-
-            InitAudioStream(dst);
-            InitVideoStream(dst);
         }
 
         private RTCConfiguration GetSelectedSdpSemantics()
@@ -393,6 +407,8 @@ namespace TLab.Network.WebRTC
         {
             CreatePeerConnection(src, false);
 
+            InitMediaStream(src);
+
             var op2 = m_peerConnectionDic[src].SetRemoteDescription(ref desc);
             yield return op2;
 
@@ -447,6 +463,8 @@ namespace TLab.Network.WebRTC
             }
 
             CreatePeerConnection(dst, true);
+
+            InitMediaStream(dst);
         }
         #endregion SIGNALING
 
