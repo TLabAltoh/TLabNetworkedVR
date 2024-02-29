@@ -279,8 +279,6 @@ namespace TLab.Network.WebRTC
 
             if (call)
             {
-                m_peerConnectionDic[dst].OnNegotiationNeeded = () => { StartCoroutine(PeerNegotiationNeeded(dst)); };
-
                 m_dataChannelDic[dst] = m_peerConnectionDic[dst].CreateDataChannel("data", m_dataChannelCnf);
                 m_dataChannelDic[dst].OnMessage = bytes => { m_onMessage.Invoke(m_userID, dst, bytes); };
                 m_dataChannelDic[dst].OnOpen = () => {
@@ -437,7 +435,7 @@ namespace TLab.Network.WebRTC
             yield break;
         }
 
-        private IEnumerator PeerNegotiationNeeded(string dst)
+        private IEnumerator CreateOffer (string dst)
         {
             Debug.Log(THIS_NAME + $"Create Offer");
 
@@ -465,6 +463,8 @@ namespace TLab.Network.WebRTC
             CreatePeerConnection(dst, true);
 
             InitMediaStream(dst);
+
+            StartCoroutine(CreateOffer(dst));
         }
         #endregion SIGNALING
 
