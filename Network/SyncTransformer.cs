@@ -98,9 +98,6 @@ namespace TLab.XR.Network
 
         [SerializeField] protected bool m_useGravity = false;
 
-#if UNITY_EDITOR
-        [SerializeField]
-#endif
         protected bool m_rbAllocated = false;
 
         protected Rigidbody m_rb;
@@ -109,7 +106,7 @@ namespace TLab.XR.Network
 
         protected int m_didnotReachCount = 0;
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
         // Windows 12's Core i 9: 400 -----> Size: 20
         protected const int CASH_COUNT = 20;
 #else

@@ -25,7 +25,7 @@ namespace TLab.XR.Interact
          * Oculsu Quest 2: 72 -----> Size: 10 * 72 / 400 = 1.8 ~= 2
          */
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
         private const int PACKET_LOSS_LIMIT = 10;
 #elif UNITY_ANDROID
         private const int PACKET_LOSS_LIMIT = 2;

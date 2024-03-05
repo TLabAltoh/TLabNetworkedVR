@@ -99,6 +99,12 @@ namespace TLab.XR.Interact.Editor
                 EditorGUILayout.Space();
             }
 
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField($"Rigidbody allocated: {m_controller.rbAllocated}");
+
+            EditorGUILayout.Space();
+
             if (GUILayout.Button("Create Hash ID"))
             {
                 m_controller.CreateHashID();
