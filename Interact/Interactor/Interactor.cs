@@ -29,13 +29,13 @@ namespace TLab.XR.Interact
 
         private string THIS_NAME => "[" + this.GetType().Name + "] ";
 
-        protected Interactable m_interactable;
-
         protected int m_identifier;
 
-        protected RaycastHit m_raycastHit;
+        protected Interactable m_interactable;
 
-        protected GameObject m_raycastResult = null;
+        protected Interactable m_candidate;
+
+        protected RaycastHit m_raycastHit;
 
         protected bool m_pressed = false;
 
@@ -47,15 +47,15 @@ namespace TLab.XR.Interact
 
         protected Vector3 m_angulerVelocity;
 
+        protected Vector3 m_rotateVelocity;
+
         public int identifier => m_identifier;
 
         public Transform pointer => m_pointer;
 
-        // Raycast Result
+        // Raycast
 
         public RaycastHit raycastHit => m_raycastHit;
-
-        public GameObject raycastResult => m_raycastResult;
 
         // Interactor input
 
@@ -69,11 +69,63 @@ namespace TLab.XR.Interact
 
         public Vector3 angulerVelocity => m_angulerVelocity;
 
-        protected virtual void UpdateRaycast(){}
+        public Vector3 rotateVelocity => m_rotateVelocity;
 
-        protected virtual void UpdateInput(){}
+        protected virtual void UpdateRaycast() { }
 
-        protected virtual void Process(){}
+        protected virtual void UpdateInput() { }
+
+        protected virtual void Process()
+        {
+            if (m_interactable != null && m_interactable.IsSelectes(this))
+            {
+                m_interactable.WhileHovered(this);
+
+                if (m_pressed)
+                    m_interactable.WhileSelected(this);
+                else
+                    m_interactable.UnSelected(this);
+            }
+            else
+            {
+                UpdateRaycast();
+
+                if (m_candidate != null)        // candidate was found
+                {
+                    if (m_interactable == m_candidate)
+                    {
+                        m_interactable.WhileHovered(this);
+
+                        if (m_onPress)
+                            m_interactable.Selected(this);
+                    }
+                    else
+                    {
+                        if (m_interactable != null)
+                            m_interactable.UnHovered(this);
+
+                        m_interactable = m_candidate;
+                        m_interactable.Hovered(this);
+                    }
+                }
+                else
+                {
+                    ForceClear();
+                }
+            }
+        }
+
+        protected virtual void ForceClear()
+        {
+            if (m_interactable != null)
+            {
+                if (m_interactable.IsSelectes(this))
+                    m_interactable.UnSelected(this);
+
+                m_interactable.UnHovered(this);
+                m_interactable = null;
+            }
+        }
 
         protected virtual void Awake() => m_identifier = GenerateIdentifier();
 

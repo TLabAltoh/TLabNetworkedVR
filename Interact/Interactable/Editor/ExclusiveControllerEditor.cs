@@ -23,12 +23,10 @@ namespace TLab.XR.Interact.Editor
         // uses the grabbableHandle and rotateble; modify as
         // appropriate to suit your needs.
 
-        private void InitializeForRotateble(ExclusiveController controller, Rotatable rotatable)
+        private void InitializeForRotateble(ExclusiveController controller)
         {
             controller.InitializeRotatable();
-            rotatable.rotateSpeed = 10f;
             EditorUtility.SetDirty(controller);
-            EditorUtility.SetDirty(rotatable);
         }
 
         private void InitializeForDivibable(GameObject target, bool isRoot)
@@ -49,7 +47,6 @@ namespace TLab.XR.Interact.Editor
 
             var rotatable = target.RequireComponent<Rotatable>();
             rotatable.enableCollision = true;
-            rotatable.rotateSpeed = 10f;
 
 #if TLAB_WITH_OCULUS_SDK
             var rayInteractable = target.RequireComponent<RayInteractable>();
@@ -75,7 +72,7 @@ namespace TLab.XR.Interact.Editor
             var rotatable = m_controller.gameObject.GetComponent<Rotatable>();
             if (rotatable != null && GUILayout.Button("Initialize for Rotatable"))
             {
-                InitializeForRotateble(m_controller, rotatable);
+                InitializeForRotateble(m_controller);
             }
 
             if (m_controller.enableDivide && GUILayout.Button("Initialize for Devibable"))

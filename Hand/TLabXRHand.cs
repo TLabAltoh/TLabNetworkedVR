@@ -39,7 +39,7 @@ namespace TLab.XR
 
                 diffRotation.ToAngleAxis(out var angle, out var axis);
 
-                return m_handRotation * axis * (angle / Time.deltaTime);
+                return m_handRotation.normalized * axis * (angle / Time.deltaTime);
             }
         }
 

@@ -31,8 +31,6 @@ namespace TLab.XR.Interact
 
         #endregion
 
-        [SerializeField] private float m_rotateSpeed = 10f;
-
         private ExclusiveController m_controller;
 
         private Vector3 m_axis;
@@ -41,13 +39,9 @@ namespace TLab.XR.Interact
 
         private bool m_onShot = false;
 
-        private const float BIAS = 10f;
-
         private const float DURATION = 0.1f;
 
         public static float ZERO_ANGLE = 0.0f;
-
-        public float rotateSpeed { get => m_rotateSpeed; set => m_rotateSpeed = value; }
 
         private bool grabbled => m_controller.grabbed;
 
@@ -57,7 +51,7 @@ namespace TLab.XR.Interact
         {
             if (!grabbled)
             {
-                m_axis = Vector3.one;
+                m_axis = -Vector3.one;
                 m_angle = ZERO_ANGLE;
 
                 m_onShot = false;
@@ -82,10 +76,10 @@ namespace TLab.XR.Interact
             {
                 if (!grabbled)
                 {
-                    var angulerVel = interactor.angulerVelocity;
+                    var angulerVel = interactor.rotateVelocity;
 
-                    m_axis = angulerVel.normalized;
-                    m_angle = angulerVel.magnitude * m_rotateSpeed * BIAS;
+                    m_axis = -angulerVel.normalized;
+                    m_angle = angulerVel.magnitude * Time.deltaTime;
 
                     m_onShot = true;
                 }
