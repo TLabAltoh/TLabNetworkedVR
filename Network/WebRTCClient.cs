@@ -1,3 +1,5 @@
+#region DEBUG_SYMBOL
+
 //#define DEBUG_LOG_WEBSOCKET
 //#undef DEBUG_LOG_WEBSOCKET
 
@@ -7,8 +9,10 @@
 //#define DEBUG_LOG_DATACHANNEL
 //#undef DEBUG_LOG_DATACHANNEL
 
-#define DEBUG_LOG_MEDIASTREAM
+//#define DEBUG_LOG_MEDIASTREAM
 //#undef DEBUG_LOG_MEDIASTREAM
+
+#endregion DEBUG_SYMBOL
 
 using System.Collections.Generic;
 using System.Collections;
@@ -17,6 +21,7 @@ using Unity.WebRTC;
 using UnityEngine;
 using UnityEngine.Events;
 using NativeWebSocket;
+using TLab.XR.Network;
 using TLab.Network.WebRTC.Voice;
 
 namespace TLab.Network.WebRTC
@@ -25,33 +30,28 @@ namespace TLab.Network.WebRTC
     public class WebRTCClient : MonoBehaviour
     {
         [Header("Signaling Server Address")]
-        [SerializeField] private string m_serverAddr = "ws://localhost:3001";
-
-        [Header("Connection State (Debug)")]
-        [SerializeField] private string m_userID;
-        [SerializeField] private string m_roomID;
+        [SerializeField] private ServerAddress m_signalingServerAddr;
 
         [Header("Audio Streaming Option")]
-        [SerializeField] private bool m_streamAudio = false;
+        [SerializeField] private bool m_streamAudioOnConnect = false;
         [SerializeField] private VoiceChat m_voiceChat;
 
         [Header("Video Streaming Option")]
-        [SerializeField] private bool m_streamVideo = false;
+        [SerializeField] private bool m_streamVideoOnConnect = false;
         [SerializeField] private Texture m_videoStreamDst;
         [SerializeField] private Texture m_videoStreamSrc;
 
         [Header("On Message Callback")]
         [SerializeField] private UnityEvent<string, string, byte[]> m_onMessage;
 
-        /**
-         * Session Dictionary
-         */
+        #region Session Manage Dictionary
         private Dictionary<string, RTCPeerConnection> m_peerConnectionDic = new Dictionary<string, RTCPeerConnection>();
         private Dictionary<string, RTCDataChannel> m_dataChannelDic = new Dictionary<string, RTCDataChannel>();
         private Dictionary<string, bool> m_dataChannelFlagDic = new Dictionary<string, bool>();
         private Dictionary<string, List<RTCIceCandidate>> m_candidateDic = new Dictionary<string, List<RTCIceCandidate>>();
+        #endregion Session Manage Dictionary
 
-        private WebSocket m_websocket;
+        private WebSocket m_ws;
 
         private RTCDataChannelInit m_dataChannelCnf;
 
@@ -59,12 +59,27 @@ namespace TLab.Network.WebRTC
         private MediaStream m_sendMediaStream;
         private Dictionary<string, string> m_mediaStreamIdDic = new Dictionary<string, string>();
 
+        private string m_userID;
+        private string m_roomID;
+
+        private IAsyncEnumerator<int> m_connect = null;
+
         private string THIS_NAME => "[" + this.GetType().Name + "] ";
 
         public int eventCount => m_onMessage.GetPersistentEventCount();
 
-        public void SetSignalingServerAddr(string addr) => m_serverAddr = addr;
+        public bool streamAudioOnConnect => m_streamAudioOnConnect;
 
+        public bool streamVideoOnConnect => m_streamVideoOnConnect;
+
+        public string userID => m_userID;
+
+        public string roomID => m_roomID;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="callback"></param>
         public void SetCallback(UnityAction<string, string, byte[]> callback)
         {
             m_onMessage.RemoveAllListeners();
@@ -72,6 +87,11 @@ namespace TLab.Network.WebRTC
         }
 
         #region ICE_CANDIDATE
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="tlabIce"></param>
         private void AddIceCandidate(string src, RTCICE tlabIce)
         {
             var candidateInfo = new RTCIceCandidateInit();
@@ -97,6 +117,11 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <param name="candidate"></param>
         private void SendIceCandidate(string dst, RTCIceCandidate candidate)
         {
             RTCICE tlabICE = new RTCICE();
@@ -107,6 +132,11 @@ namespace TLab.Network.WebRTC
             SendWsMeg(RTCSigAction.ICE, null, tlabICE, dst);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <param name="candidate"></param>
         private void OnIceCandidate(string dst, RTCIceCandidate candidate)
         {
             SendIceCandidate(dst, candidate);
@@ -116,6 +146,10 @@ namespace TLab.Network.WebRTC
 #endif
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
         private void OnIceConnectionChange(RTCIceConnectionState state)
         {
             switch (state)
@@ -151,6 +185,9 @@ namespace TLab.Network.WebRTC
         #endregion ICE_CANDIDATE
 
         #region MEDIA_STREAMING
+        /// <summary>
+        /// 
+        /// </summary>
         private void DestroyMediaStream()
         {
             m_receiveMediaStream?.Dispose();
@@ -160,6 +197,10 @@ namespace TLab.Network.WebRTC
             m_sendMediaStream = null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="active"></param>
         public void OnPauseAudio(bool active)
         {
             foreach (RTCPeerConnection pc in m_peerConnectionDic.Values)
@@ -171,15 +212,23 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="active"></param>
         public void OnPauseVideo(bool active)
         {
             // TODO
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
         public void InitAudioStream(string dst)
         {
-            List<RTCRtpCodecCapability> audioCodecs = new List<RTCRtpCodecCapability>();
-            string[] excludeCodecTypes = new[] { "audio/CN", "audio/telephone-event" };
+            var audioCodecs = new List<RTCRtpCodecCapability>();
+            var excludeCodecTypes = new[] { "audio/CN", "audio/telephone-event" };
             foreach (var codec in RTCRtpSender.GetCapabilities(TrackKind.Audio).codecs)
             {
                 if (excludeCodecTypes.Count(type => codec.mimeType.Contains(type)) > 0)
@@ -190,18 +239,16 @@ namespace TLab.Network.WebRTC
                 audioCodecs.Add(codec);
             }
 
-            if (m_streamAudio)
+            if (m_streamAudioOnConnect)
             {
-                AudioStreamTrack track = new AudioStreamTrack(m_voiceChat.microphoneSource);
+                var track = new AudioStreamTrack(m_voiceChat.microphoneSource);
 
-                /**
-                 * One transceiver is added at this timing, so AddTransceiver does not need to be executed.
-                 */
-                RTCRtpSender sender = m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+                // One transceiver is added at this timing, so AddTransceiver does not need to be executed.
+                var sender = m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
 
-                RTCRtpTransceiver transceiver = m_peerConnectionDic[dst].GetTransceivers().First(t => t.Sender == sender);
+                var transceiver = m_peerConnectionDic[dst].GetTransceivers().First(t => t.Sender == sender);
                 transceiver.Direction = RTCRtpTransceiverDirection.SendRecv;
-                RTCErrorType errorType = transceiver.SetCodecPreferences(audioCodecs.ToArray());
+                var errorType = transceiver.SetCodecPreferences(audioCodecs.ToArray());
                 if (errorType != RTCErrorType.None)
                 {
                     Debug.LogError(THIS_NAME + $"SetCodecPreferences Error: {errorType}");
@@ -213,19 +260,28 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
         private void InitVideoStream(string dst)
         {
-            /**
-             * To be implemented in the future
-             */
-            //if (m_streamVideo)
-            //{
-            //    VideoStreamTrack track = new VideoStreamTrack(m_videoStreamSrc);
+            // To be implemented in the future
 
-            //    m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
-            //}
+#if false
+            if (m_streamVideoOnConnect)
+            {
+                var track = new VideoStreamTrack(m_videoStreamSrc);
+
+                m_peerConnectionDic[dst].AddTrack(track, m_sendMediaStream);
+            }
+#endif
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
         private void InitMediaStream(string dst)
         {
             InitAudioStream(dst);
@@ -234,6 +290,10 @@ namespace TLab.Network.WebRTC
         #endregion MEDIA_STREAMING
 
         #region SESSION_DESCRIPTION
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pc"></param>
         private void OnSetLocalSuccess(RTCPeerConnection pc)
         {
 #if DEBUG_LOG_PEERCONNECTION
@@ -241,6 +301,10 @@ namespace TLab.Network.WebRTC
 #endif
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pc"></param>
         private void OnSetRemoteSuccess(RTCPeerConnection pc)
         {
 #if DEBUG_LOG_PEERCONNECTION
@@ -248,11 +312,19 @@ namespace TLab.Network.WebRTC
 #endif
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="error"></param>
         private void OnCreateSessionDescriptionError(RTCError error)
         {
             Debug.LogError(THIS_NAME + $"Filed to create Session Description: {error.message}");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="error"></param>
         private void OnSetSessionDescriptionError(ref RTCError error)
         {
             Debug.LogError(THIS_NAME + $"Filed to set Sesstion Description: {error.message}");
@@ -260,15 +332,21 @@ namespace TLab.Network.WebRTC
         #endregion SESSION_DESCRIPTION
 
         #region SIGNALING
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <param name="call"></param>
         private void CreatePeerConnection(string dst, bool call)
         {
             if (m_peerConnectionDic.ContainsKey(dst))
             {
-                // peer has already been created
-                return;
+                // When peer connection has already been created,
+                // Disconnect existing data channel and create a new one.
+                HangUpDataChannel(dst);
             }
 
-            RTCConfiguration configuration = GetSelectedSdpSemantics();
+            var configuration = GetSelectedSdpSemantics();
             m_peerConnectionDic[dst] = new RTCPeerConnection(ref configuration);
             m_peerConnectionDic[dst].OnIceCandidate = candidate => { OnIceCandidate(dst, candidate); };
             m_peerConnectionDic[dst].OnIceConnectionChange = state => { OnIceConnectionChange(state); };
@@ -314,6 +392,10 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private RTCConfiguration GetSelectedSdpSemantics()
         {
             RTCConfiguration config = default;
@@ -325,7 +407,12 @@ namespace TLab.Network.WebRTC
             return config;
         }
 
-        private RTCDesc EncodeSesstionDesc(RTCSessionDescription desc)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="desc"></param>
+        /// <returns></returns>
+        private RTCDesc EncodeSesstionDescription(RTCSessionDescription desc)
         {
             RTCDesc tlabDesc = new RTCDesc();
             tlabDesc.type = (int)desc.type;
@@ -336,7 +423,12 @@ namespace TLab.Network.WebRTC
             return tlabDesc;
         }
 
-        private RTCSessionDescription DecodeSesstionDesc(RTCDesc tlabDesc)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tlabDesc"></param>
+        /// <returns></returns>
+        private RTCSessionDescription DecodeSesstionDescription(RTCDesc tlabDesc)
         {
             RTCSessionDescription result = new RTCSessionDescription();
             result.type = (RTCSdpType)tlabDesc.type;
@@ -347,6 +439,12 @@ namespace TLab.Network.WebRTC
             return result;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <param name="desc"></param>
+        /// <returns></returns>
         private IEnumerator OnCreateAnswerSuccess(string dst, RTCSessionDescription desc)
         {
             var op = m_peerConnectionDic[dst].SetLocalDescription(ref desc);
@@ -362,9 +460,15 @@ namespace TLab.Network.WebRTC
                 OnSetSessionDescriptionError(ref error);
             }
 
-            SendWsMeg(RTCSigAction.ANSWER, EncodeSesstionDesc(desc), null, dst);
+            SendWsMeg(RTCSigAction.ANSWER, EncodeSesstionDescription(desc), null, dst);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <param name="desc"></param>
+        /// <returns></returns>
         private IEnumerator OnCreateOfferSuccess(string dst, RTCSessionDescription desc)
         {
             var op = m_peerConnectionDic[dst].SetLocalDescription(ref desc);
@@ -380,9 +484,15 @@ namespace TLab.Network.WebRTC
                 OnSetSessionDescriptionError(ref error);
             }
 
-            SendWsMeg(RTCSigAction.OFFER, EncodeSesstionDesc(desc), null, dst);
+            SendWsMeg(RTCSigAction.OFFER, EncodeSesstionDescription(desc), null, dst);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="desc"></param>
+        /// <returns></returns>
         private IEnumerator OnAnswer(string src, RTCSessionDescription desc)
         {
             var op2 = m_peerConnectionDic[src].SetRemoteDescription(ref desc);
@@ -401,6 +511,12 @@ namespace TLab.Network.WebRTC
             yield break;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="desc"></param>
+        /// <returns></returns>
         private IEnumerator OnOffer(string src, RTCSessionDescription desc)
         {
             CreatePeerConnection(src, false);
@@ -435,9 +551,14 @@ namespace TLab.Network.WebRTC
             yield break;
         }
 
-        private IEnumerator CreateOffer (string dst)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <returns></returns>
+        private IEnumerator CreateOffer(string dst)
         {
-            Debug.Log(THIS_NAME + $"Create Offer");
+            Debug.Log(THIS_NAME + $"Create offer to {dst}");
 
             var op = m_peerConnectionDic[dst].CreateOffer();
             yield return op;
@@ -452,12 +573,16 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dst"></param>
+        /// <returns></returns>
         private IEnumerator Call(string dst)
         {
             if (m_dataChannelDic.ContainsKey(dst) || m_dataChannelFlagDic.ContainsKey(dst) || m_peerConnectionDic.ContainsKey(dst))
             {
-                Debug.LogError(THIS_NAME + $"dst: {dst} is already exist.");
-                yield break;
+                Debug.LogWarning(THIS_NAME + $"dst: {dst} is already exist.");
             }
 
             CreatePeerConnection(dst, true);
@@ -465,10 +590,18 @@ namespace TLab.Network.WebRTC
             InitMediaStream(dst);
 
             StartCoroutine(CreateOffer(dst));
+
+            yield return null;
         }
         #endregion SIGNALING
 
         #region UTILITY
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userID"></param>
+        /// <param name="roomID"></param>
+        /// <param name="dataChannelOnf"></param>
         public void Join(string userID, string roomID, RTCDataChannelInit dataChannelOnf = null)
         {
             m_userID = userID;
@@ -496,7 +629,7 @@ namespace TLab.Network.WebRTC
 
                 if (eventTrack.Track is AudioStreamTrack audioTrack)
                 {
-                    Debug.Log(THIS_NAME + $"OnAudioTrack.");
+                    Debug.Log(THIS_NAME + $"OnAudioTrack");
 
                     if (m_mediaStreamIdDic.ContainsKey(eventTrack.Track.Id))
                     {
@@ -512,11 +645,14 @@ namespace TLab.Network.WebRTC
             SendWsMeg(RTCSigAction.JOIN, null, null, null);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="src"></param>
         public void HangUpDataChannel(string src)
         {
-            /**
-             * Close Datachannel befor offer
-             */
+            // Close Datachannel befor offer
+
             if (m_dataChannelDic.ContainsKey(src))
             {
                 m_dataChannelDic[src].Close();
@@ -528,9 +664,8 @@ namespace TLab.Network.WebRTC
 #endif
             }
 
-            /**
-             * Datachannel flag delete
-             */
+            // Datachannel flag delete
+
             if (m_dataChannelFlagDic.ContainsKey(src))
             {
                 m_dataChannelFlagDic.Remove(src);
@@ -540,9 +675,8 @@ namespace TLab.Network.WebRTC
 #endif
             }
 
-            /**
-             * Close peerConnection befor offer
-             */
+            // Close peerConnection befor offer
+
             if (m_peerConnectionDic.ContainsKey(src))
             {
                 foreach (RTCRtpTransceiver transceiver in m_peerConnectionDic[src].GetTransceivers())
@@ -572,18 +706,24 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void HangUpDataChannelAll()
         {
             if (m_dataChannelDic.Count > 0)
             {
-                List<string> dsts = new List<string>(m_dataChannelDic.Keys);
-                foreach (string dst in dsts)
+                var dsts = new List<string>(m_dataChannelDic.Keys);
+                foreach (var dst in dsts)
                 {
                     HangUpDataChannel(dst);
                 }
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Exit()
         {
             HangUpDataChannelAll();
@@ -596,11 +736,15 @@ namespace TLab.Network.WebRTC
             this.m_roomID = "";
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
         public void SendRTCMsg(byte[] bytes)
         {
-            foreach (string id in m_dataChannelDic.Keys)
+            foreach (var id in m_dataChannelDic.Keys)
             {
-                RTCDataChannel dataChannel = m_dataChannelDic[id];
+                var dataChannel = m_dataChannelDic[id];
                 if (m_dataChannelFlagDic[id])
                 {
                     dataChannel.Send(bytes);
@@ -608,9 +752,16 @@ namespace TLab.Network.WebRTC
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="desc"></param>
+        /// <param name="ice"></param>
+        /// <param name="dst"></param>
         public async void SendWsMeg(RTCSigAction action, RTCDesc desc, RTCICE ice, string dst)
         {
-            if (m_websocket != null && m_websocket.State == WebSocketState.Open)
+            if (m_ws != null && m_ws.State == WebSocketState.Open)
             {
                 var obj = new RTCSigJson();
                 obj.src = m_userID;
@@ -626,10 +777,14 @@ namespace TLab.Network.WebRTC
                 Debug.Log(THIS_NAME + "Send websocket message: " + json);
 #endif
 
-                await m_websocket.SendText(json);
+                await m_ws.SendText(json);
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
         public void OnWsMsg(string message)
         {
             var parse = JsonUtility.FromJson<RTCSigJson>(message);
@@ -640,10 +795,10 @@ namespace TLab.Network.WebRTC
                     AddIceCandidate(parse.src, parse.ice);
                     break;
                 case (int)RTCSigAction.OFFER:
-                    StartCoroutine(OnOffer(parse.src, DecodeSesstionDesc(parse.desc)));
+                    StartCoroutine(OnOffer(parse.src, DecodeSesstionDescription(parse.desc)));
                     break;
                 case (int)RTCSigAction.ANSWER:
-                    StartCoroutine(OnAnswer(parse.src, DecodeSesstionDesc(parse.desc)));
+                    StartCoroutine(OnAnswer(parse.src, DecodeSesstionDescription(parse.desc)));
                     break;
                 case (int)RTCSigAction.JOIN:
                     StartCoroutine(Call(parse.src));
@@ -654,40 +809,51 @@ namespace TLab.Network.WebRTC
             }
         }
         #endregion UTILITY
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private async IAsyncEnumerator<int> ConnectServerTask()
         {
-            yield return -1;
+            yield return 0;
+
+            if (m_ws != null)
+            {
+                m_ws.Close();
+                m_ws = null;
+            }
+
+            yield return 0;
 
 #if DEBUG_LOG_WEBSOCKET
             Debug.Log(THIS_NAME + "Create call back start.");
             Debug.Log(THIS_NAME + "Connect to signaling server start");
 #endif
 
-            m_websocket = new WebSocket(m_serverAddr);
+            m_ws = new WebSocket(m_signalingServerAddr.addr);
 
-            m_websocket.OnOpen += () =>
+            m_ws.OnOpen += () =>
             {
 #if DEBUG_LOG_WEBSOCKET
                 Debug.Log(THIS_NAME + "Connection open!");
 #endif
             };
 
-            m_websocket.OnError += (e) =>
+            m_ws.OnError += (e) =>
             {
                 Debug.Log(THIS_NAME + "Error! " + e);
             };
 
-            m_websocket.OnClose += (e) =>
+            m_ws.OnClose += (e) =>
             {
 #if DEBUG_LOG_WEBSOCKET
                 Debug.Log(THIS_NAME + "Connection closed!");
 #endif
             };
 
-            m_websocket.OnMessage += (bytes) =>
+            m_ws.OnMessage += (bytes) =>
             {
-                string message = System.Text.Encoding.UTF8.GetString(bytes);
+                var message = System.Text.Encoding.UTF8.GetString(bytes);
 
 #if DEBUG_LOG_WEBSOCKET
                 Debug.Log(THIS_NAME + "On websocket message: " + message);
@@ -696,44 +862,16 @@ namespace TLab.Network.WebRTC
                 OnWsMsg(message);
             };
 
-            /**
-             * Waiting for messages
-             */
-            await m_websocket.Connect();
+            m_ws.Connect();
 
-            yield break;
-        }
+            m_connect = null;
 
-        private IEnumerator ConnectToSignalingServerStart()
-        {
-            /**
-             * I don't know how many frames it takes to close the Websocket client.
-             * So I'll wait for one frame anyway.
-             */
-
-            yield return null;
-
-            if (m_websocket != null)
-            {
-                m_websocket.Close();
-                m_websocket = null;
-            }
-
-            yield return null;
-
-            IAsyncEnumerator<int> task = ConnectServerTask();
-            task.MoveNextAsync();
-
-            yield return null;
-
-            task.MoveNextAsync();
-
-            yield break;
+            yield return 1;
         }
 
         public void ConnectToSignalintServer()
         {
-            StartCoroutine(ConnectToSignalingServerStart());
+            m_connect = ConnectServerTask();
         }
 
         private void Start()
@@ -741,31 +879,33 @@ namespace TLab.Network.WebRTC
             ConnectToSignalintServer();
         }
 
-        void Update()
+        private void Update()
         {
-#if !UNITY_WEBGL || UNITY_EDITOR
-            if (m_websocket != null)
+            if (m_connect != null)
             {
-                m_websocket.DispatchMessageQueue();
+                m_connect.MoveNextAsync();
+            }
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+            if (m_ws != null)
+            {
+                m_ws.DispatchMessageQueue();
             }
 #endif
         }
 
         private async void CloseWebSocket()
         {
-            if (m_websocket != null)
+            if (m_ws != null)
             {
-                await m_websocket.Close();
+                await m_ws.Close();
             }
 
-            m_websocket = null;
+            m_ws = null;
         }
 
         void OnDestroy()
         {
-            /**
-             * OnDestroy() waits for CloseWebSocket() to exit ?
-             */
             CloseWebSocket();
         }
 

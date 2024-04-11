@@ -12,7 +12,6 @@ namespace TLab.Network.WebRTC.Voice
 
         [Header("Audio")]
         [SerializeField] private AudioSource m_outputAudioSource;
-        [SerializeField] private VoiceChatFilter m_outputAudioFilter;
 
         public void SetAudioStreamTrack(AudioStreamTrack track)
         {
@@ -24,9 +23,6 @@ namespace TLab.Network.WebRTC.Voice
         void Start()
         {
             VoiceChat.Instance.RegistClient(m_identifier.avatorId, this);
-
-            GameObject child = new GameObject("Player");
-            child.transform.parent = this.gameObject.transform;
 
             m_outputAudioSource.playOnAwake = false;
         }

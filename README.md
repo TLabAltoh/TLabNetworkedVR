@@ -1,25 +1,17 @@
 # TLabNetworkedVR
-For VR development in Unity  
-Assets supporting synchronisation of objects in VR space  
+Multiplayer networking solution for VR applications.
 
-## Document
-[click here](https://hackmd.io/A1JpgE7jQHeAWUWWOGIiMA)
+## Protocol
 
-## Note
-- TLabVRGrabber has been renamed TLabNetworkedVR due to expanded functionality.
-- Due to continued destructive updates, I recommend those who want to use the stable version to download the package from the release.
+| Sync Target                    | Protocol  | 
+| ------------------------------ | --------- | 
+| Transform (or Rigidbody)       | WebRTC    | 
+| Animator (Not fully supported) | WebSocket | 
 
-## Features
-- Supports both hand tracking and controllers
-- Rigidbody Synchronization
-- VoiceChat
-- Websocket and P2P together
-- Sync Animator
-
-## Screenshot
-[Image is an example of a project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
-<img src="Media/tlab-grabbable-controller.gif" width="256">  
-<img src="Media/tlab-grabbable-handtracking.gif" width="256">
+| Message Type                 | Protocol  | 
+| ---------------------------- | --------- | 
+| Voice Chat                   | WebRTC    | 
+| Custom Message (Json Format) | WebSocket | 
 
 ## Getting Started
 
@@ -30,13 +22,48 @@ Assets supporting synchronisation of objects in VR space
 - [unity.webrtc](https://github.com/Unity-Technologies/com.unity.webrtc)
 - [NativeWebsocket](https://github.com/endel/NativeWebSocket)
 
-### Installing
-Clone the repository or download it from the release, place it under any Unity project and use it
+### Server Set Up
+- [TLabNetworkedVR](https://github.com/TLabAltoh/TLabNetworkedVR-Server.git)
 
-### Tutorial
-Please refer to the [sample project](https://github.com/TLabAltoh/VR_Classroom) that uses this asset, which describes how to set up the server.  
-I am planning to release a simpler sample project in the future.
+1. Set the SignalingServer and SyncServer addresses in Unity
+<table>
+<tr>
+	<td>
+		<img src="Media/server-setup.png" width="256">
+	</td>
+</tr>
+	<td>
+		<img src="Media/server-address-sync.png" width="256">
+	</td>
+	<td>
+		<img src="Media/server-address-signaling.png" width="256">
+	</td>
+</tr>
+</table>
 
-## Link
-- [Sample project using this asset](https://github.com/TLabAltoh/VR_Classroom)  
-- [See below for the multiplayer server code](https://github.com/TLabAltoh/VR_Classroom/tree/master/Server/)
+2. Execute the following commands in TLabNetworkedVR-Server/SyncServer
+
+```
+npm start
+```
+
+or
+
+```
+start.bat
+```
+
+3. Execute the following commands in TLabNetworkedVR-Server/WebRTCSignaling
+
+```
+npm start
+```
+
+or
+
+```
+start.bat
+```
+
+## Sample Project
+[VR_Classroom](https://github.com/TLabAltoh/VR_Classroom.git)

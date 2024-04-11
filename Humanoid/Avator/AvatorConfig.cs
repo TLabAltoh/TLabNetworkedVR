@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace TLab.XR.Humanoid
 {
-    [CreateAssetMenu(menuName = "TLab/AvatorConfig")]
+    [CreateAssetMenu(menuName = "TLab/NetworkedVR/AvatorConfig")]
     public class AvatorConfig : ScriptableObject
     {
-        public enum BodyParts
+        public enum PartsType
         {
             HEAD,
             L_HAND,
@@ -15,13 +15,13 @@ namespace TLab.XR.Humanoid
         [System.Serializable]
         public class AvatorParts
         {
-            public BodyParts parts;
+            public PartsType type;
 
             public GameObject prefab;
         }
 
-        [SerializeField] private AvatorParts[] m_body;
+        [SerializeField] private AvatorParts[] m_parts;
 
-        public AvatorParts[] body => m_body;
+        public AvatorParts[] parts => m_parts;
     }
 }

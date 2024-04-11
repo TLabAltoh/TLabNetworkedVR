@@ -1,13 +1,14 @@
 using System.Collections;
 using UnityEngine;
 using Unity.WebRTC;
+using TLab.XR.Network;
 
 namespace TLab.Network.WebRTC.Voice
 {
     [AddComponentMenu("TLab/NetworkedVR/" + nameof(VoiceChat) + " (TLab)")]
     public class VoiceChat : MonoBehaviour
     {
-        [Header("WebRTCDataClinet")]
+        [Header("WebRTCClinet")]
         [SerializeField] private WebRTCClient m_client;
 
         [Tooltip("Delivering input from the microphone or")]
@@ -108,6 +109,18 @@ namespace TLab.Network.WebRTC.Voice
             }
         }
 
+        private IEnumerator WaitForSocketConnection()
+        {
+            while (!SyncClient.Instance.socketIsOpen)
+            {
+                yield return new WaitForSeconds(1f);
+            }
+
+            StartVoiceChat();
+
+            yield break;
+        }
+
         public void CloseRTC() => m_client.Exit();
 
         private void Update()
@@ -139,6 +152,8 @@ namespace TLab.Network.WebRTC.Voice
             {
                 m_microphoneSource = GetComponent<AudioSource>();
             }
+
+            StartCoroutine(WaitForSocketConnection());
         }
     }
 }

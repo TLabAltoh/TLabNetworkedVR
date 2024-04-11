@@ -73,23 +73,44 @@ namespace TLab.XR.Humanoid
         [System.Serializable]
         public class TrackTarget
         {
-            public AvatorConfig.BodyParts parts;
+            public AvatorConfig.PartsType parts;
 
             public Transform target;
         }
 
-        [SerializeField] private AvatorConfig.BodyParts m_bodyParts;
+        [SerializeField] private AvatorConfig.PartsType m_partsType;
 
-        public AvatorConfig.BodyParts bodyParts => m_bodyParts;
+        [SerializeField] private bool m_self = false;
 
-        private bool m_self = false;
+        [SerializeField] private bool m_initializeOnStartUp = false;
 
-        public bool self { get => m_self; set => m_self = value; }
+        private bool m_initialized = false;
 
         public void Shutdown() => UnRegister(m_id);
 
+        public void Init(AvatorConfig.PartsType partsType, bool self)
+        {
+            if (m_initialized)
+            {
+                Debug.LogError(THIS_NAME + "This tracker has already been initialised.");
+
+                return;
+            }
+
+            m_partsType = partsType;
+
+            m_self = self;
+
+            m_initialized = true;
+        }
+
         protected override void Start()
         {
+            if (m_initializeOnStartUp)
+            {
+                Init(m_partsType, m_self);
+            }
+
             m_useGravity = false;
 
             base.Start();
@@ -101,7 +122,7 @@ namespace TLab.XR.Humanoid
         {
             base.Update();
 
-            if (m_self)
+            if (m_initialized && m_self)
             {
                 SyncRTCTransform();
             }

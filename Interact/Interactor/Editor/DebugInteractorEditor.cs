@@ -17,15 +17,21 @@ namespace TLab.XR.Interact.Editor
         {
             base.OnInspectorGUI();
 
-            if (GUILayout.Button("Grab"))
+            EditorGUILayout.BeginHorizontal();
+
+            var width = GUILayout.Width(Screen.width / 3);
+
+            if (GUILayout.Button("Grab", width))
             {
                 m_interactor.Grab();
             }
 
-            if (GUILayout.Button("Release"))
+            if (GUILayout.Button("Release", width))
             {
                 m_interactor.Release();
             }
+
+            EditorGUILayout.EndHorizontal();
         }
     }
 }

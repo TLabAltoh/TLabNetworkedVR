@@ -154,7 +154,7 @@ namespace TLab.XR.Network
             m_hash = v.GetHashCode().ToString();
         }
 
-        protected virtual void OnValidate(){ }
+        protected virtual void OnValidate() { }
 #endif
 
         protected virtual void Start()
